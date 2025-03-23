@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IronMonkey Risk Research{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/output.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-blue-800 text-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="{{ url_for('client.dashboard') }}" class="font-bold text-xl">IronMonkey Risk Research</a>
+            </div>
+            <nav>
+                <ul class="flex space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('client.dashboard') }}" class="hover:underline">Dashboard</a></li>
+                        <li><a href="{{ url_for('client.client_list') }}" class="hover:underline">Clients</a></li>
+                        <li><a href="{{ url_for('risk.assessment_list') }}" class="hover:underline">Assessments</a></li>
+                        <li><a href="{{ url_for('risk.intelligence_feed') }}" class="hover:underline">Intelligence</a></li>
+                        {% if current_user.is_admin %}
+                            <li><a href="{{ url_for('admin.dashboard') }}" class="hover:underline">Admin</a></li>
+                        {% endif %}
+                        <li><a href="{{ url_for('auth.logout') }}" class="hover:underline">Logout</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('auth.login') }}" class="hover:underline">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}" class="hover:underline">Register</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        {% set alert_class = {
+                            'success': 'bg-green-100 border-green-500 text-green-700',
+                            'info': 'bg-blue-100 border-blue-500 text-blue-700',
+                            'warning': 'bg-yellow-100 border-yellow-500 text-yellow-700',
+                            'error': 'bg-red-100 border-red-500 text-red-700'
+                        } %}
+                        <div class="{{ alert_class.get(category, 'bg-blue-100 border-blue-500 text-blue-700') }} border-l-4 p-4 mb-2">
+                            <p>{{ message }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-blue-800 text-white py-4 mt-auto">
+        <div class="container mx-auto px-4">
+            <p class="text-center">&copy; {{ now.year }} IronMonkey Risk Research. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Common JavaScript for the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close alert messages
+            document.querySelectorAll('[data-dismiss="alert"]').forEach(function(element) {
+                element.addEventListener('click', function() {
+                    this.parentElement.remove();
+                });
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
