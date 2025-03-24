@@ -82,11 +82,20 @@ def login():
                     except Exception as e:
                         print(f"Failed to update last_login: {e}")
                         
+                    # Set authentication flag
+                    user.authenticated = True
+                    
                     # Login user with Flask-Login
-                    login_user(user, remember=form.remember_me.data)
+                    result = login_user(user, remember=form.remember_me.data)
                     
                     # Debug: Check if user is authenticated after login_user
+                    print(f"Login user result: {result}")
                     print(f"User authenticated after login_user: {current_user.is_authenticated}")
+                    
+                    # Force session to save immediately
+                    from flask import session
+                    session['_user_id'] = user.get_id()
+                    session.modified = True
                     
                     next_page = request.args.get("next")
                     if not next_page or url_parse(next_page).netloc != "":

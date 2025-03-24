@@ -56,6 +56,8 @@ class Config:
     # Session settings
     SESSION_TYPE = "redis"
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
+    SESSION_USE_SIGNER = True
+    SESSION_KEY_PREFIX = "ironmonkey:"
 
     # Security settings
     REMEMBER_COOKIE_SECURE = True
@@ -72,10 +74,20 @@ class DevelopmentConfig(Config):
     REMEMBER_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_DOMAIN = None  # Important for localhost
+    SESSION_COOKIE_PATH = "/"
     WTF_CSRF_ENABLED = True  # Keep CSRF protection
+    
+    # Use filesystem sessions for development (more reliable than Redis)
+    SESSION_TYPE = "filesystem"
+    SESSION_FILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "flask_session")
+    SESSION_FILE_THRESHOLD = 500  # Maximum number of session files
     
     # Constructor to override settings
     def __init__(self):
+        # Create session directory if it doesn't exist
+        if not os.path.exists(self.SESSION_FILE_DIR):
+            os.makedirs(self.SESSION_FILE_DIR)
+            
         # Ensure these settings are applied
         self.DEBUG = True
         self.REMEMBER_COOKIE_SECURE = False

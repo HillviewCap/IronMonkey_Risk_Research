@@ -46,12 +46,29 @@ def create_app(config_name='default'):
     csrf.init_app(app)
     migrate.init_app(app, db)
     
-    # Set up Redis connection
-    app.redis = redis.from_url(app.config['REDIS_URL'])
+    # Initialize session handling
+    from flask_session import Session
+    Session(app)
+    
+    # Set up Redis connection for session storage
+    try:
+        app.redis = redis.from_url(app.config['REDIS_URL'])
+        print(f"Redis connection established to {app.config['REDIS_URL']}")
+    except Exception as e:
+        print(f"Redis connection failed: {str(e)}")
+        # Fall back to filesystem session if Redis fails
+        app.config['SESSION_TYPE'] = 'filesystem'
+        print("Falling back to filesystem session storage")
     
     # Set up Elasticsearch connection
-    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
-        if app.config['ELASTICSEARCH_URL'] else None
+    try:
+        app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+            if app.config['ELASTICSEARCH_URL'] else None
+        if app.elasticsearch:
+            print(f"Elasticsearch connection established to {app.config['ELASTICSEARCH_URL']}")
+    except Exception as e:
+        print(f"Elasticsearch connection failed: {str(e)}")
+        app.elasticsearch = None
     
     # Configure login manager with more detailed settings
     login_manager.login_view = 'auth.login'

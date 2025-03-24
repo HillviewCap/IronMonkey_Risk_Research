@@ -8,21 +8,35 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login_manager
 from app.utils.db import get_db_connection, release_db_connection
 
-class User(UserMixin, db.Model):
+class User(UserMixin):
     """User model for authentication and system access"""
-    __tablename__ = 'users_accounts'
-    __table_args__ = {'schema': 'users'}
+    # We're not fully using SQLAlchemy here, so customize for direct DB use
     
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
-    email = db.Column(db.String(120), index=True, unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    first_name = db.Column(db.String(64))
-    last_name = db.Column(db.String(64))
-    is_active = db.Column(db.Boolean, default=True)
-    is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
+    def __init__(self):
+        self.id = None
+        self.username = None
+        self.email = None
+        self.password_hash = None
+        self.first_name = None
+        self.last_name = None
+        self.is_active = True
+        self.is_admin = False
+        self.created_at = None
+        self.last_login = None
+        self.authenticated = False
+    
+    # Add Flask-Login required methods
+    def get_id(self):
+        return str(self.id)
+    
+    def is_authenticated(self):
+        return self.authenticated
+    
+    def is_active(self):
+        return self.is_active
+    
+    def is_anonymous(self):
+        return False
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -66,26 +80,30 @@ class User(UserMixin, db.Model):
             'last_login': self.last_login.isoformat() if self.last_login else None
         }
 
-# User loader function for Flask-Login
+# Move loader function outside class to avoid method resolution issues
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login"""
-    # Try SQLAlchemy first
-    user = User.query.get(int(user_id))
-    if user:
-        return user
-        
-    # Fall back to direct database connection
+    print(f"Loading user with ID: {user_id}")
+    
+    # Handle potential non-integer IDs
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        print(f"Invalid user_id format: {user_id}")
+        return None
+    
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute(
-                "SELECT * FROM users.users_accounts WHERE id = %s",
-                (int(user_id),)
-            )
+            query = "SELECT * FROM users.users_accounts WHERE id = %s"
+            print(f"Executing query: {query} with id: {user_id}")
+            cur.execute(query, (user_id,))
             row = cur.fetchone()
+            
             if row:
+                print(f"User found: ID={row[0]}, Username={row[1]}")
                 user = User()
                 user.id = row[0]
                 user.username = row[1]
@@ -97,10 +115,18 @@ def load_user(user_id):
                 user.is_admin = row[7]
                 user.created_at = row[8]
                 user.last_login = row[9]
+                
+                # This is critical for Flask-Login to recognize authenticated users
+                user.authenticated = True
+                
                 return user
-        return None
+            else:
+                print(f"No user found with ID: {user_id}")
+                return None
     except Exception as e:
-        print(f"Error loading user: {e}")
+        print(f"Error in load_user: {e}")
+        import traceback
+        traceback.print_exc()
         return None
     finally:
         if conn:
