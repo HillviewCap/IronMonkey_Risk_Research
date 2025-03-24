@@ -1,7 +1,15 @@
 """
 Routes for authentication blueprint
 """
-from flask import render_template, redirect, url_for, flash, request, send_from_directory
+
+from flask import (
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    request,
+    send_from_directory,
+)
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.urls import url_parse
 from app.blueprints.auth import auth_bp
@@ -11,20 +19,25 @@ from app.blueprints.auth.forms import RegistrationForm, LoginForm
 from app.utils.db import get_db_connection, release_db_connection
 
 
-@auth_bp.route('/')
+@auth_bp.route("/")
 def index():
-    return redirect(url_for('auth.login'))
+    return redirect(url_for("auth.login"))
 
-@auth_bp.route('/favicon.ico')
+
+@auth_bp.route("/favicon.ico")
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return send_from_directory(
+        os.path.join(app.root_path, "static"),
+        "favicon.ico",
+        mimetype="image/vnd.microsoft.icon",
+    )
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
+
+@auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     """Handle user login"""
     if current_user.is_authenticated:
-        return redirect(url_for('client.dashboard'))
+        return redirect(url_for("client.dashboard"))
 
     form = LoginForm()
     conn = None  # Initialize conn
@@ -32,7 +45,10 @@ def login():
         try:
             conn = get_db_connection()
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM users_accounts WHERE username = %s", (form.username.data,))
+                cur.execute(
+                    "SELECT * FROM users_accounts WHERE username = %s",
+                    (form.username.data,),
+                )
                 row = cur.fetchone()
                 if row:
                     user = User()
@@ -48,41 +64,42 @@ def login():
                     user.last_login = row[9]
 
                     if user is None or not user.check_password(form.password.data):
-                        flash('Invalid username or password', 'danger')
-                        return redirect(url_for('auth.login'))
+                        flash("Invalid username or password", "danger")
+                        return redirect(url_for("auth.login"))
                     login_user(user, remember=form.remember_me.data)
-                    next_page = request.args.get('next')
-                    if not next_page or url_parse(next_page).netloc != '':
-                        next_page = url_for('client.dashboard')
+                    next_page = request.args.get("next")
+                    if not next_page or url_parse(next_page).netloc != "":
+                        next_page = url_for("client.dashboard")
                     return redirect(next_page)
                 else:
-                    flash('Invalid username or password', 'danger')
-                    return redirect(url_for('auth.login'))
+                    flash("Invalid username or password", "danger")
+                    return redirect(url_for("auth.login"))
         except Exception as e:
             print(f"An error occurred: {e}")
-            flash('An error occurred while logging in.', 'danger')
-            return redirect(url_for('auth.login'))
+            flash("An error occurred while logging in.", "danger")
+            return redirect(url_for("auth.login"))
         finally:
             if conn:
                 release_db_connection(conn)
 
-    return render_template('auth/login.html', form=form)
+    return render_template("auth/login.html", form=form)
 
 
-@auth_bp.route('/logout')
+@auth_bp.route("/logout")
 @login_required
 def logout():
     """Handle user logout"""
     logout_user()
-    flash('You have been logged out.', 'info')
-    return redirect(url_for('auth.login'))
+    flash("You have been logged out.", "info")
+    return redirect(url_for("auth.login"))
 
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
+@auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     """Handle user registration"""
+    print("Entering register route")
     if current_user.is_authenticated:
-        return redirect(url_for('client.dashboard'))
+        return redirect(url_for("client.dashboard"))
 
     form = RegistrationForm()
     conn = None  # Initialize conn
@@ -90,43 +107,53 @@ def register():
         try:
             conn = get_db_connection()
             with conn.cursor() as cur:
-                user = User(username=form.username.data, email=form.email.data,
-                            first_name=form.first_name.data, last_name=form.last_name.data)
+                user = User(
+                    username=form.username.data,
+                    email=form.email.data,
+                    first_name=form.first_name.data,
+                    last_name=form.last_name.data,
+                )
                 user.set_password(form.password.data)
                 cur.execute(
                     "INSERT INTO users_accounts (username, email, password_hash, first_name, last_name) VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                    (user.username, user.email, user.password_hash, user.first_name, user.last_name)
+                    (
+                        user.username,
+                        user.email,
+                        user.password_hash,
+                        user.first_name,
+                        user.last_name,
+                    ),
                 )
                 user.id = cur.fetchone()[0]
                 conn.commit()
-            flash('Congratulations, you are now a registered user!', 'success')
-            return redirect(url_for('auth.login'))
+            flash("Congratulations, you are now a registered user!", "success")
+            return redirect(url_for("auth.login"))
         except Exception as e:
             print(f"An error occurred: {e}")
-            flash('An error occurred while registering.', 'danger')
-            return redirect(url_for('auth.register'))
+            flash("An error occurred while registering.", "danger")
+            return redirect(url_for("auth.register"))
         finally:
             if conn:
                 release_db_connection(conn)
 
-    return render_template('auth/register.html', form=form)
+    return render_template("auth/register.html", form=form)
 
 
-@auth_bp.route('/reset-password', methods=['GET', 'POST'])
+@auth_bp.route("/reset-password", methods=["GET", "POST"])
 def reset_password_request():
     """Handle password reset request"""
     if current_user.is_authenticated:
-        return redirect(url_for('client.dashboard'))
+        return redirect(url_for("client.dashboard"))
 
     # Placeholder for password reset logic
-    return render_template('auth/reset_password_request.html')
+    return render_template("auth/reset_password_request.html")
 
 
-@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
     """Handle password reset with token"""
     if current_user.is_authenticated:
-        return redirect(url_for('client.dashboard'))
+        return redirect(url_for("client.dashboard"))
 
     # Placeholder for password reset validation
-    return render_template('auth/reset_password.html')
+    return render_template("auth/reset_password.html")
