@@ -68,11 +68,39 @@ def login():
                     if user is None or not user.check_password(form.password.data):
                         flash("Invalid username or password", "danger")
                         return redirect(url_for("auth.login"))
+                    # Log successful login attempt
+                    print(f"Login successful for user: {user.username}")
+                    
+                    # Update last_login timestamp
+                    try:
+                        with conn.cursor() as update_cur:
+                            update_cur.execute(
+                                "UPDATE users.users_accounts SET last_login = CURRENT_TIMESTAMP WHERE id = %s",
+                                (user.id,)
+                            )
+                            conn.commit()
+                    except Exception as e:
+                        print(f"Failed to update last_login: {e}")
+                        
+                    # Login user with Flask-Login
                     login_user(user, remember=form.remember_me.data)
+                    
+                    # Debug: Check if user is authenticated after login_user
+                    print(f"User authenticated after login_user: {current_user.is_authenticated}")
+                    
                     next_page = request.args.get("next")
                     if not next_page or url_parse(next_page).netloc != "":
                         next_page = url_for("client.dashboard")
-                    return redirect(next_page)
+                    
+                    resp = redirect(next_page)
+                    # If in development environment, explicitly ensure cookies are not secure
+                    if app.debug:
+                        session_cookie_name = app.session_interface.get_cookie_name(app)
+                        resp.set_cookie(session_cookie_name, 
+                                        request.cookies.get(session_cookie_name, ''),
+                                        httponly=True, 
+                                        secure=False)
+                    return resp
                 else:
                     flash("Invalid username or password", "danger")
                     return redirect(url_for("auth.login"))
@@ -159,3 +187,49 @@ def reset_password(token):
 
     # Placeholder for password reset validation
     return render_template("auth/reset_password.html")
+
+@auth_bp.route("/session-debug")
+def session_debug():
+    """Debug route to check session configuration"""
+    from flask import session, jsonify
+    import flask
+    
+    if current_user.is_authenticated:
+        user_info = {
+            'id': current_user.id,
+            'username': current_user.username,
+            'is_authenticated': current_user.is_authenticated,
+        }
+    else:
+        user_info = {
+            'is_authenticated': False,
+            'message': 'Not authenticated'
+        }
+    
+    # Clean session data for display (remove sensitive info)
+    session_data = {}
+    for key in session:
+        if key == '_user_id':  # Only show the user ID as it's useful for debugging
+            session_data[key] = session[key]
+        else:
+            session_data[key] = '[HIDDEN]'
+    
+    debug_info = {
+        'user': user_info,
+        'session': session_data,
+        'cookies': {k: '[HIDDEN]' for k in request.cookies},
+        'cookie_names': list(request.cookies.keys()),
+        'app_config': {
+            'debug': app.debug,
+            'testing': app.testing,
+            'session_cookie_secure': app.config.get('SESSION_COOKIE_SECURE'),
+            'remember_cookie_secure': app.config.get('REMEMBER_COOKIE_SECURE'),
+            'session_cookie_httponly': app.config.get('SESSION_COOKIE_HTTPONLY'),
+            'session_cookie_domain': app.config.get('SESSION_COOKIE_DOMAIN'),
+            'session_cookie_path': app.config.get('SESSION_COOKIE_PATH', '/'),
+            'session_type': app.config.get('SESSION_TYPE'),
+        },
+        'flask_version': flask.__version__,
+    }
+    
+    return jsonify(debug_info)

@@ -45,10 +45,14 @@ def create_app(config_name='default'):
     app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
         if app.config['ELASTICSEARCH_URL'] else None
     
-    # Configure login manager
+    # Configure login manager with more detailed settings
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
+    login_manager.refresh_view = 'auth.login'
+    login_manager.needs_refresh_message = 'Please reauthenticate to access this page.'
+    login_manager.needs_refresh_message_category = 'warning'
+    login_manager.session_protection = "basic"  # Use "strong" in production
     
     # Register blueprints
     from app.blueprints.auth import auth_bp

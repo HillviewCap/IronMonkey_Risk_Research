@@ -68,8 +68,17 @@ class DevelopmentConfig(Config):
     """Development configuration"""
 
     DEBUG = True
+    TESTING = False
     REMEMBER_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_DOMAIN = None  # Important for localhost
+    WTF_CSRF_ENABLED = True  # Keep CSRF protection
+    
+    # Override base class settings for development
+    def __init__(self):
+        super().__init__()
+        self.REMEMBER_COOKIE_SECURE = False
+        self.SESSION_COOKIE_SECURE = False
 
 
 class TestingConfig(Config):

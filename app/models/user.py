@@ -70,7 +70,41 @@ class User(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login"""
-    return User.query.get(int(user_id))
+    # Try SQLAlchemy first
+    user = User.query.get(int(user_id))
+    if user:
+        return user
+        
+    # Fall back to direct database connection
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM users.users_accounts WHERE id = %s",
+                (int(user_id),)
+            )
+            row = cur.fetchone()
+            if row:
+                user = User()
+                user.id = row[0]
+                user.username = row[1]
+                user.email = row[2]
+                user.password_hash = row[3]
+                user.first_name = row[4]
+                user.last_name = row[5]
+                user.is_active = row[6]
+                user.is_admin = row[7]
+                user.created_at = row[8]
+                user.last_login = row[9]
+                return user
+        return None
+    except Exception as e:
+        print(f"Error loading user: {e}")
+        return None
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 @staticmethod
 def get_all_users():
