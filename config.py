@@ -74,11 +74,21 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_DOMAIN = None  # Important for localhost
     WTF_CSRF_ENABLED = True  # Keep CSRF protection
     
-    # Override base class settings for development
+    # Constructor to override settings
     def __init__(self):
-        super().__init__()
+        # Ensure these settings are applied
+        self.DEBUG = True
         self.REMEMBER_COOKIE_SECURE = False
         self.SESSION_COOKIE_SECURE = False
+        
+        # Force settings from environment variables if present
+        if os.environ.get('SESSION_COOKIE_SECURE') == 'False':
+            print("Forcing SESSION_COOKIE_SECURE to False from environment")
+            self.SESSION_COOKIE_SECURE = False
+            
+        if os.environ.get('REMEMBER_COOKIE_SECURE') == 'False':
+            print("Forcing REMEMBER_COOKIE_SECURE to False from environment")
+            self.REMEMBER_COOKIE_SECURE = False
 
 
 class TestingConfig(Config):

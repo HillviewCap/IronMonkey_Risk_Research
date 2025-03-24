@@ -29,8 +29,16 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     
     # Load configuration
+    print(f"Creating app with config: {config_name}")
     configuration = config_dict.get(config_name, 'default')
     app.config.from_object(configuration)
+    
+    # Force development settings when running in debug
+    if config_name == 'development' or os.environ.get('FLASK_DEBUG') == '1':
+        print("Setting explicit development configuration for cookies")
+        app.config['SESSION_COOKIE_SECURE'] = False
+        app.config['REMEMBER_COOKIE_SECURE'] = False
+        app.config['DEBUG'] = True
     
     # Initialize extensions with app
     db.init_app(app)
