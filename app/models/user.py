@@ -11,6 +11,7 @@ from app.utils.db import get_db_connection, release_db_connection
 class User(UserMixin, db.Model):
     """User model for authentication and system access"""
     __tablename__ = 'users_accounts'
+    __table_args__ = {'schema': 'users'}
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
@@ -78,7 +79,7 @@ def get_all_users():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM users_accounts")
+            cur.execute("SELECT * FROM users.users_accounts")
             users = []
             for row in cur.fetchall():
                 user = User()

@@ -9,7 +9,9 @@ from flask import (
     flash,
     request,
     send_from_directory,
+    current_app as app,
 )
+import os
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.urls import url_parse
 from app.blueprints.auth import auth_bp
@@ -46,7 +48,7 @@ def login():
             conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT * FROM users_accounts WHERE username = %s",
+                    "SELECT * FROM users.users_accounts WHERE username = %s",
                     (form.username.data,),
                 )
                 row = cur.fetchone()
@@ -115,7 +117,7 @@ def register():
                 )
                 user.set_password(form.password.data)
                 cur.execute(
-                    "INSERT INTO users_accounts (username, email, password_hash, first_name, last_name) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                    "INSERT INTO users.users_accounts (username, email, password_hash, first_name, last_name) VALUES (%s, %s, %s, %s, %s) RETURNING id",
                     (
                         user.username,
                         user.email,
