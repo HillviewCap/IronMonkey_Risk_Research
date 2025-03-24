@@ -1,0 +1,29 @@
+{
+  "name": "ironmonkey_risk_research",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HillviewCap/IronMonkey_Risk_Research.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HillviewCap/IronMonkey_Risk_Research/issues"
+  },
+  "homepage": "https://github.com/HillviewCap/IronMonkey_Risk_Research#readme",
+  "description": "",
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17"
+  }
+}

@@ -6,18 +6,30 @@ from datetime import timedelta
 
 class Config:
     """Base configuration"""
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
-    
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+
     # Database settings
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/ironmonkey')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL',
+        f"postgresql://{os.environ.get('POSTGRES_USER')}:{os.environ.get('POSTGRES_PASSWORD')}@{os.environ.get('POSTGRES_HOST')}:{os.environ.get('POSTGRES_PORT')}/{os.environ.get('POSTGRES_DB')}"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
+    # MongoDB settings
+    MONGO_URI = os.environ.get('MONGO_URI',
+        f"mongodb://{os.environ.get('MONGO_USER')}:{os.environ.get('MONGO_PASSWORD')}@{os.environ.get('MONGO_HOST')}:{os.environ.get('MONGO_PORT')}/{os.environ.get('MONGO_DB')}"
+    )
+
     # Elasticsearch settings
-    ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL', 'http://localhost:9200')
-    
+    ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL',
+        f"http://{os.environ.get('ELASTICSEARCH_HOST')}:{os.environ.get('ELASTICSEARCH_PORT')}"
+    )
+    ELASTICSEARCH_PASSWORD = os.environ.get('ELASTICSEARCH_PASSWORD')
+
     # Redis settings
-    REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-    
+    REDIS_URL = os.environ.get('REDIS_URL',
+        f"redis://:{os.environ.get('REDIS_PASSWORD')}@{os.environ.get('REDIS_HOST')}:{os.environ.get('REDIS_PORT')}/0"
+    )
+
     # Session settings
     SESSION_TYPE = 'redis'
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
@@ -53,5 +65,8 @@ config_dict = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig
+    'default': DevelopmentConfig,
 }
+
+app_env = os.environ.get('APP_ENV', 'default')
+config = config_dict.get(app_env, DevelopmentConfig)
