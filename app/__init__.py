@@ -2,7 +2,7 @@
 Application factory pattern implementation for IronMonkey Risk Research Platform
 """
 import os
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -65,5 +65,15 @@ def create_app(config_name='default'):
     
     from app.blueprints.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+
+    @app.route('/')
+    def index():
+        return redirect(url_for('auth.login'))
+
+    from datetime import datetime
+
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.utcnow()}
     
     return app
