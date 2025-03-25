@@ -29,8 +29,16 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     
     # Load configuration
+    print(f"Creating app with config: {config_name}")
     configuration = config_dict.get(config_name, 'default')
     app.config.from_object(configuration)
+    
+    # Force development settings when running in debug
+    if config_name == 'development' or os.environ.get('FLASK_DEBUG') == '1':
+        print("Setting explicit development configuration for cookies")
+        app.config['SESSION_COOKIE_SECURE'] = False
+        app.config['REMEMBER_COOKIE_SECURE'] = False
+        app.config['DEBUG'] = True
     
     # Initialize extensions with app
     db.init_app(app)
@@ -38,17 +46,38 @@ def create_app(config_name='default'):
     csrf.init_app(app)
     migrate.init_app(app, db)
     
-    # Set up Redis connection
-    app.redis = redis.from_url(app.config['REDIS_URL'])
+    # Initialize session handling
+    from flask_session import Session
+    Session(app)
+    
+    # Set up Redis connection for session storage
+    try:
+        app.redis = redis.from_url(app.config['REDIS_URL'])
+        print(f"Redis connection established to {app.config['REDIS_URL']}")
+    except Exception as e:
+        print(f"Redis connection failed: {str(e)}")
+        # Fall back to filesystem session if Redis fails
+        app.config['SESSION_TYPE'] = 'filesystem'
+        print("Falling back to filesystem session storage")
     
     # Set up Elasticsearch connection
-    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
-        if app.config['ELASTICSEARCH_URL'] else None
+    try:
+        app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+            if app.config['ELASTICSEARCH_URL'] else None
+        if app.elasticsearch:
+            print(f"Elasticsearch connection established to {app.config['ELASTICSEARCH_URL']}")
+    except Exception as e:
+        print(f"Elasticsearch connection failed: {str(e)}")
+        app.elasticsearch = None
     
-    # Configure login manager
+    # Configure login manager with more detailed settings
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
+    login_manager.refresh_view = 'auth.login'
+    login_manager.needs_refresh_message = 'Please reauthenticate to access this page.'
+    login_manager.needs_refresh_message_category = 'warning'
+    login_manager.session_protection = "basic"  # Use "strong" in production
     
     # Register blueprints
     from app.blueprints.auth import auth_bp

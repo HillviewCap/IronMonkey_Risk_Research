@@ -11,6 +11,13 @@ from app import db
 @login_required
 def dashboard():
     """Display client dashboard"""
+    # Debug session and auth status
+    from flask import session
+    print(f"Dashboard access - User: {current_user.username if not current_user.is_anonymous else 'Anonymous'}")
+    print(f"Is authenticated: {current_user.is_authenticated}")
+    print(f"Session data: {session}")
+    print(f"Session cookie: {request.cookies.get('session')}")
+    
     return render_template('client/dashboard.html')
 
 @client_bp.route('/clients')
