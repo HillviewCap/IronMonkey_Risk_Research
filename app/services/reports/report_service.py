@@ -1,99 +1,112 @@
 """
 Report generation service
 """
+
 import os
 import json
 from datetime import datetime
 from flask import current_app, render_template
 from weasyprint import HTML
+from app.models.risk import Finding, Recommendation
+
 
 class ReportService:
     """Service for generating reports"""
-    
+
     @staticmethod
-    def generate_assessment_report(assessment, format='html'):
+    def generate_assessment_report(assessment, format="html"):
         """
         Generate a risk assessment report
-        
+
         Args:
             assessment: Assessment model instance
             format: Report format (html, pdf)
-            
+
         Returns:
             Report content or None if assessment not found
         """
         if not assessment:
             return None
-        
+
         # Gather assessment data for the report
         report_data = {
-            'assessment': assessment,
-            'client': assessment.client,
-            'findings': assessment.findings.order_by(assessment.findings.c.risk_level.desc()).all(),
-            'recommendations': assessment.recommendations.order_by(assessment.recommendations.c.priority.desc()).all(),
-            'generated_at': datetime.utcnow(),
-            'risk_levels': {
-                'critical': assessment.findings.filter_by(risk_level='Critical').count(),
-                'high': assessment.findings.filter_by(risk_level='High').count(),
-                'medium': assessment.findings.filter_by(risk_level='Medium').count(),
-                'low': assessment.findings.filter_by(risk_level='Low').count()
-            }
+            "assessment": assessment,
+            "client": assessment.client,
+            "findings": assessment.findings.order_by(Finding.risk_level.desc()).all(),
+            "recommendations": assessment.recommendations.order_by(
+                Recommendation.priority.desc()
+            ).all(),
+            "generated_at": datetime.utcnow(),
+            "risk_levels": {
+                "critical": assessment.findings.filter_by(
+                    risk_level="Critical"
+                ).count(),
+                "high": assessment.findings.filter_by(risk_level="High").count(),
+                "medium": assessment.findings.filter_by(risk_level="Medium").count(),
+                "low": assessment.findings.filter_by(risk_level="Low").count(),
+            },
         }
-        
-        # Generate HTML report
-        html_content = render_template('reports/assessment_report.html', **report_data) # Corrected path assumption
 
-        if format == 'html':
+        # Generate HTML report
+        html_content = render_template(
+            "reports/assessment_report.html", **report_data
+        )  # Corrected path assumption
+
+        if format == "html":
             return html_content
-        elif format == 'pdf':
+        elif format == "pdf":
             # Generate PDF report using WeasyPrint
             try:
                 # We need to provide a base_url for WeasyPrint to find static assets (like CSS)
                 # Assuming static files are served from '/static' relative to the app root
-                base_url = current_app.config.get('SERVER_NAME') or 'http://localhost:5000' # Fallback for local dev
+                base_url = (
+                    current_app.config.get("SERVER_NAME") or "http://localhost:5000"
+                )  # Fallback for local dev
                 pdf_content = HTML(string=html_content, base_url=base_url).write_pdf()
                 return pdf_content
             except Exception as e:
-                current_app.logger.error(f"Error generating PDF report with WeasyPrint: {str(e)}")
+                current_app.logger.error(
+                    f"Error generating PDF report with WeasyPrint: {str(e)}"
+                )
                 # Consider raising a specific exception or returning an error indicator
                 return None
         else:
             current_app.logger.error(f"Unsupported report format: {format}")
             return None
-    
+
     @staticmethod
-    def save_report(client_id, report_name, content, format='html'):
+    def save_report(client_id, report_name, content, format="html"):
         """
         Save a report to the file system
-        
+
         Args:
             client_id: Client ID
             report_name: Report name
             content: Report content
             format: Report format (html, pdf)
-            
+
         Returns:
             File path if successful, None otherwise
         """
         if not content:
             return None
-        
+
         # Create reports directory if it doesn't exist
-        reports_dir = os.path.join(current_app.static_folder, 'reports', str(client_id))
+        reports_dir = os.path.join(current_app.static_folder, "reports", str(client_id))
         os.makedirs(reports_dir, exist_ok=True)
-        
+
         # Generate filename with timestamp
-        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         filename = f"{report_name}_{timestamp}.{format}"
         file_path = os.path.join(reports_dir, filename)
-        
+
         try:
             # Write report content to file
-            with open(file_path, 'w' if format == 'html' else 'wb') as f:
+            with open(file_path, "w" if format == "html" else "wb") as f:
                 f.write(content)
-            
+
             # Return relative path for access via URL
-            return os.path.join('static', 'reports', str(client_id), filename)
+            return os.path.join("static", "reports", str(client_id), filename)
         except Exception as e:
             current_app.logger.error(f"Error saving report: {str(e)}")
             return None
