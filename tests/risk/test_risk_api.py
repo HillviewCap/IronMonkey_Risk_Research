@@ -2,6 +2,7 @@ import pytest
 import json
 from flask import url_for
 
+
 # --- Calculate Score API Tests ---
 def test_calculate_score_unauthenticated(client, test_assessment):
     """
@@ -9,48 +10,84 @@ def test_calculate_score_unauthenticated(client, test_assessment):
     WHEN the '/api/assessments/<id>/calculate-score' endpoint is requested (POST)
     THEN check it redirects to login or returns 401
     """
-    response = client.post(url_for('risk.calculate_assessment_score', assessment_id=test_assessment.id))
+    response = client.post(
+        url_for("risk.calculate_assessment_score", assessment_id=test_assessment.id)
+    )
     # Assuming redirect for now
     assert response.status_code == 302
-    assert response.location == url_for('auth.login', _external=False)
+    # Check if location starts with login URL, ignoring query params
+    assert response.location.startswith(url_for("auth.login", _external=False))
     # If 401: assert response.status_code == 401
 
-def test_calculate_score_authenticated_invalid_status(client, test_user, login, test_assessment):
+
+def test_calculate_score_authenticated_invalid_status(
+    client, test_user, login, test_assessment
+):
     """
     GIVEN authenticated user and an assessment not in 'review' or 'complete' status
     WHEN the '/api/assessments/<id>/calculate-score' endpoint is requested (POST)
     THEN check it returns a 400 Bad Request error
     """
     login(test_user)
-    response = client.post(url_for('risk.calculate_assessment_score', assessment_id=test_assessment.id))
+    response = client.post(
+        url_for("risk.calculate_assessment_score", assessment_id=test_assessment.id)
+    )
     assert response.status_code == 400
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
     data = json.loads(response.data)
-    assert data['status'] == 'error'
-    assert 'Assessment must be in review or complete status' in data['message']
+    assert data["status"] == "error"
+    assert "Assessment must be in review or complete status" in data["message"]
 
-def test_calculate_score_authenticated_valid_status(client, test_user, login, test_assessment, db_session):
+
+def test_calculate_score_authenticated_valid_status(
+    client, test_user, login, test_assessment, db
+):
     """
     GIVEN authenticated user and an assessment in 'complete' status
     WHEN the '/api/assessments/<id>/calculate-score' endpoint is requested (POST)
     THEN check it returns a success response with score data
     """
-    test_assessment.status = 'complete'
-    db_session.add(test_assessment)
-    db_session.commit()
+    # Create a scoring configuration for the test
+    from app.models.framework import ScoringConfiguration
+
+    # Check if a scoring configuration already exists
+    scoring_config = ScoringConfiguration.query.filter_by(is_active=True).first()
+    if not scoring_config:
+        # Create a new scoring configuration
+        scoring_config = ScoringConfiguration(
+            name="Test Scoring Configuration",
+            description="Configuration for testing",
+            is_active=True,
+            configuration={
+                "conflict_weight": 0.3,
+                "cyber_weight": 0.3,
+                "exposure_weight": 0.4,
+            },
+        )
+        db.session.add(scoring_config)
+        db.session.commit()
+
+    # Set the assessment status and scoring configuration
+    test_assessment.status = "complete"
+    test_assessment.scoring_config_id = scoring_config.id
+    db.session.add(test_assessment)
+    db.session.commit()
 
     login(test_user)
-    response = client.post(url_for('risk.calculate_assessment_score', assessment_id=test_assessment.id))
+    response = client.post(
+        url_for("risk.calculate_assessment_score", assessment_id=test_assessment.id)
+    )
     assert response.status_code == 200
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
     data = json.loads(response.data)
-    assert data['status'] == 'success'
-    assert 'Assessment score calculated successfully' in data['message']
-    assert 'data' in data
-    assert data['data']['assessment_id'] == test_assessment.id
-    assert 'overall_score' in data['data']
-    assert 'framework_scores' in data['data']
-    assert 'finding_scores' in data['data']
+    assert data["status"] == "success"
+    assert "Assessment score calculated successfully" in data["message"]
+    assert "data" in data
+    assert data["data"]["assessment_id"] == test_assessment.id
+    assert "overall_score" in data["data"]
+    assert "framework_scores" in data["data"]
+    assert "finding_scores" in data["data"]
+
 
 # --- Add Finding API Tests ---
 def test_add_finding_unauthenticated(client, test_assessment):
@@ -59,13 +96,19 @@ def test_add_finding_unauthenticated(client, test_assessment):
     WHEN the '/api/assessments/<id>/findings' endpoint is requested (POST)
     THEN check it redirects to login or returns 401
     """
-    response = client.post(url_for('risk.add_finding', assessment_id=test_assessment.id), json={})
+    response = client.post(
+        url_for("risk.add_finding", assessment_id=test_assessment.id), json={}
+    )
     # Assuming redirect for now
     assert response.status_code == 302
-    assert response.location == url_for('auth.login', _external=False)
+    # Check if location starts with login URL, ignoring query params
+    assert response.location.startswith(url_for("auth.login", _external=False))
     # If 401: assert response.status_code == 401
 
-def test_add_finding_authenticated_success(client, test_user, login, test_assessment, db_session):
+
+def test_add_finding_authenticated_success(
+    client, test_user, login, test_assessment, db
+):
     """
     GIVEN authenticated user and valid finding data
     WHEN the '/api/assessments/<id>/findings' endpoint is requested (POST)
@@ -73,34 +116,37 @@ def test_add_finding_authenticated_success(client, test_user, login, test_assess
     """
     login(test_user)
     finding_data = {
-        'title': 'New API Finding',
-        'description': 'Details about the finding.',
-        'risk_level': 'High',
-        'likelihood': 'Medium',
-        'impact': 'Significant',
-        'framework_category': 'Cyber Actor'
+        "title": "New API Finding",
+        "description": "Details about the finding.",
+        "risk_level": "High",
+        "likelihood": "Medium",
+        "impact": "Significant",
+        "framework_category": "Cyber Actor",
     }
     response = client.post(
-        url_for('risk.add_finding', assessment_id=test_assessment.id),
-        json=finding_data
+        url_for("risk.add_finding", assessment_id=test_assessment.id), json=finding_data
     )
     assert response.status_code == 200
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
     data = json.loads(response.data)
-    assert data['status'] == 'success'
-    assert 'Finding added successfully' in data['message']
-    assert 'data' in data
-    assert 'finding_id' in data['data']
-    new_finding_id = data['data']['finding_id']
+    assert data["status"] == "success"
+    assert "Finding added successfully" in data["message"]
+    assert "data" in data
+    assert "finding_id" in data["data"]
+    new_finding_id = data["data"]["finding_id"]
 
     from app.models.risk import Finding
-    new_finding = db_session.query(Finding).get(new_finding_id)
+
+    new_finding = db.session.query(Finding).get(new_finding_id)
     assert new_finding is not None
     assert new_finding.assessment_id == test_assessment.id
-    assert new_finding.title == finding_data['title']
-    assert new_finding.risk_level == finding_data['risk_level']
+    assert new_finding.title == finding_data["title"]
+    assert new_finding.risk_level == finding_data["risk_level"]
 
-def test_add_finding_authenticated_fail_validation(client, test_user, login, test_assessment):
+
+def test_add_finding_authenticated_fail_validation(
+    client, test_user, login, test_assessment
+):
     """
     GIVEN authenticated user and invalid finding data (missing required fields)
     WHEN the '/api/assessments/<id>/findings' endpoint is requested (POST)
@@ -108,20 +154,21 @@ def test_add_finding_authenticated_fail_validation(client, test_user, login, tes
     """
     login(test_user)
     invalid_finding_data = {
-        'description': 'Missing title and risk level'
+        "description": "Missing title and risk level"
         # Missing 'title', 'risk_level'
     }
     # --- RESTORED MISSING CODE ---
     response = client.post(
-        url_for('risk.add_finding', assessment_id=test_assessment.id),
-        json=invalid_finding_data
+        url_for("risk.add_finding", assessment_id=test_assessment.id),
+        json=invalid_finding_data,
     )
     assert response.status_code == 400
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
     data = json.loads(response.data)
-    assert data['status'] == 'error'
-    assert 'Missing required field' in data['message']
+    assert data["status"] == "error"
+    assert "Missing required field" in data["message"]
     # --- END RESTORED CODE ---
+
 
 def test_add_finding_authenticated_invalid_assessment_id(client, test_user, login):
     """
@@ -131,12 +178,12 @@ def test_add_finding_authenticated_invalid_assessment_id(client, test_user, logi
     """
     login(test_user)
     invalid_id = 99999
-    finding_data = {'title': 'Finding for invalid assessment', 'risk_level': 'Low'}
+    finding_data = {"title": "Finding for invalid assessment", "risk_level": "Low"}
     response = client.post(
-        url_for('risk.add_finding', assessment_id=invalid_id),
-        json=finding_data
+        url_for("risk.add_finding", assessment_id=invalid_id), json=finding_data
     )
     assert response.status_code == 404
+
 
 # --- Add Recommendation API Tests ---
 def test_add_recommendation_unauthenticated(client, test_finding):
@@ -145,13 +192,19 @@ def test_add_recommendation_unauthenticated(client, test_finding):
     WHEN the '/api/findings/<id>/recommendations' endpoint is requested (POST)
     THEN check it redirects to login or returns 401
     """
-    response = client.post(url_for('risk.add_recommendation', finding_id=test_finding.id), json={})
+    response = client.post(
+        url_for("risk.add_recommendation", finding_id=test_finding.id), json={}
+    )
     # Assuming redirect for now
     assert response.status_code == 302
-    assert response.location == url_for('auth.login', _external=False)
+    # Check if location starts with login URL, ignoring query params
+    assert response.location.startswith(url_for("auth.login", _external=False))
     # If 401: assert response.status_code == 401
 
-def test_add_recommendation_authenticated_success(client, test_user, login, test_finding, db_session):
+
+def test_add_recommendation_authenticated_success(
+    client, test_user, login, test_finding, db
+):
     """
     GIVEN authenticated user and valid recommendation data for an existing finding
     WHEN the '/api/findings/<id>/recommendations' endpoint is requested (POST)
@@ -159,34 +212,38 @@ def test_add_recommendation_authenticated_success(client, test_user, login, test
     """
     login(test_user)
     recommendation_data = {
-        'title': 'New API Recommendation',
-        'description': 'Details about the recommendation.',
-        'priority': 'High',
-        'implementation_cost': 'Medium',
-        'implementation_time': 'Short'
+        "title": "New API Recommendation",
+        "description": "Details about the recommendation.",
+        "priority": "High",
+        "implementation_cost": "Medium",
+        "implementation_time": "Short",
     }
     response = client.post(
-        url_for('risk.add_recommendation', finding_id=test_finding.id),
-        json=recommendation_data
+        url_for("risk.add_recommendation", finding_id=test_finding.id),
+        json=recommendation_data,
     )
     assert response.status_code == 200
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
     data = json.loads(response.data)
-    assert data['status'] == 'success'
-    assert 'Recommendation added successfully' in data['message']
-    assert 'data' in data
-    assert 'recommendation_id' in data['data']
-    new_recommendation_id = data['data']['recommendation_id']
+    assert data["status"] == "success"
+    assert "Recommendation added successfully" in data["message"]
+    assert "data" in data
+    assert "recommendation_id" in data["data"]
+    new_recommendation_id = data["data"]["recommendation_id"]
 
     from app.models.risk import Recommendation
-    new_recommendation = db_session.query(Recommendation).get(new_recommendation_id)
+
+    new_recommendation = db.session.query(Recommendation).get(new_recommendation_id)
     assert new_recommendation is not None
     assert new_recommendation.finding_id == test_finding.id
     assert new_recommendation.assessment_id == test_finding.assessment_id
-    assert new_recommendation.title == recommendation_data['title']
-    assert new_recommendation.priority == recommendation_data['priority']
+    assert new_recommendation.title == recommendation_data["title"]
+    assert new_recommendation.priority == recommendation_data["priority"]
 
-def test_add_recommendation_authenticated_fail_validation(client, test_user, login, test_finding):
+
+def test_add_recommendation_authenticated_fail_validation(
+    client, test_user, login, test_finding
+):
     """
     GIVEN authenticated user and invalid recommendation data (missing required fields)
     WHEN the '/api/findings/<id>/recommendations' endpoint is requested (POST)
@@ -194,15 +251,15 @@ def test_add_recommendation_authenticated_fail_validation(client, test_user, log
     """
     login(test_user)
     invalid_recommendation_data = {
-        'description': 'Missing title and priority'
+        "description": "Missing title and priority"
         # Missing 'title', 'priority'
     }
     response = client.post(
-        url_for('risk.add_recommendation', finding_id=test_finding.id),
-        json=invalid_recommendation_data
+        url_for("risk.add_recommendation", finding_id=test_finding.id),
+        json=invalid_recommendation_data,
     )
     assert response.status_code == 400
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
 
 
 # --- Report Generation API Tests ---
@@ -212,11 +269,15 @@ def test_generate_report_unauthenticated(client, test_assessment):
     WHEN the '/api/assessments/<id>/report' endpoint is requested (GET)
     THEN check it redirects to login or returns 401
     """
-    response = client.get(url_for('risk.generate_assessment_report_api', assessment_id=test_assessment.id))
+    response = client.get(
+        url_for("risk.generate_assessment_report_api", assessment_id=test_assessment.id)
+    )
     # Assuming redirect for now
     assert response.status_code == 302
-    assert response.location == url_for('auth.login', _external=False)
+    # Check if location starts with login URL, ignoring query params
+    assert response.location.startswith(url_for("auth.login", _external=False))
     # If 401: assert response.status_code == 401
+
 
 def test_generate_report_authenticated_html(client, test_user, login, test_assessment):
     """
@@ -225,12 +286,21 @@ def test_generate_report_authenticated_html(client, test_user, login, test_asses
     THEN check it returns a successful HTML response
     """
     login(test_user)
-    response = client.get(url_for('risk.generate_assessment_report_api', assessment_id=test_assessment.id, format='html'))
+    response = client.get(
+        url_for(
+            "risk.generate_assessment_report_api",
+            assessment_id=test_assessment.id,
+            format="html",
+        )
+    )
     assert response.status_code == 200
-    assert response.content_type == 'text/html; charset=utf-8'
+    assert response.content_type == "text/html; charset=utf-8"
     # Check for some basic HTML structure or content expected in the report
-    assert b"<h1>Assessment Report</h1>" in response.data # Assuming this title exists in the report template
-    assert bytes(test_assessment.name, 'utf-8') in response.data
+    assert (
+        b"<h1>Risk Assessment Report</h1>" in response.data
+    )  # Matching the actual title in the template
+    assert bytes(test_assessment.name, "utf-8") in response.data
+
 
 def test_generate_report_authenticated_pdf(client, test_user, login, test_assessment):
     """
@@ -239,28 +309,47 @@ def test_generate_report_authenticated_pdf(client, test_user, login, test_assess
     THEN check it returns a successful PDF response with correct headers
     """
     login(test_user)
-    response = client.get(url_for('risk.generate_assessment_report_api', assessment_id=test_assessment.id, format='pdf'))
+    response = client.get(
+        url_for(
+            "risk.generate_assessment_report_api",
+            assessment_id=test_assessment.id,
+            format="pdf",
+        )
+    )
     assert response.status_code == 200
-    assert response.content_type == 'application/pdf'
+    assert response.content_type == "application/pdf"
     # Check for the Content-Disposition header suggesting a download
-    assert 'Content-Disposition' in response.headers
-    assert f'attachment;filename=assessment_{test_assessment.id}_report.pdf' in response.headers['Content-Disposition']
+    assert "Content-Disposition" in response.headers
+    assert (
+        f"attachment;filename=assessment_{test_assessment.id}_report.pdf"
+        in response.headers["Content-Disposition"]
+    )
     # Check if the response data looks like a PDF (starts with %PDF)
-    assert response.data.startswith(b'%PDF')
+    assert response.data.startswith(b"%PDF")
 
-def test_generate_report_authenticated_invalid_format(client, test_user, login, test_assessment):
+
+def test_generate_report_authenticated_invalid_format(
+    client, test_user, login, test_assessment
+):
     """
     GIVEN authenticated user and a valid assessment
     WHEN the '/api/assessments/<id>/report' endpoint is requested (GET) with an invalid format
     THEN check it returns a 400 Bad Request error
     """
     login(test_user)
-    response = client.get(url_for('risk.generate_assessment_report_api', assessment_id=test_assessment.id, format='invalid'))
+    response = client.get(
+        url_for(
+            "risk.generate_assessment_report_api",
+            assessment_id=test_assessment.id,
+            format="invalid",
+        )
+    )
     assert response.status_code == 400
-    assert response.content_type == 'application/json'
+    assert response.content_type == "application/json"
     data = json.loads(response.data)
-    assert data['status'] == 'error'
-    assert 'Invalid report format requested' in data['message']
+    assert data["status"] == "error"
+    assert "Invalid report format requested" in data["message"]
+
 
 def test_generate_report_authenticated_invalid_assessment_id(client, test_user, login):
     """
@@ -270,13 +359,19 @@ def test_generate_report_authenticated_invalid_assessment_id(client, test_user, 
     """
     login(test_user)
     invalid_id = 99999
-    response = client.get(url_for('risk.generate_assessment_report_api', assessment_id=invalid_id, format='html'))
-    # The route uses get_or_404
+    response = client.get(
+        url_for(
+            "risk.generate_assessment_report_api",
+            assessment_id=invalid_id,
+            format="html",
+        )
+    )
+    # The route uses get_or_404 which returns Flask's default 404 HTML page
     assert response.status_code == 404
+    # Check for standard Flask 404 page content
+    assert b"Not Found" in response.data
+    assert b"The requested URL was not found on the server" in response.data
 
-    data = json.loads(response.data)
-    assert data['status'] == 'error'
-    assert 'Missing required field' in data['message']
 
 def test_add_recommendation_authenticated_invalid_finding_id(client, test_user, login):
     """
@@ -286,9 +381,9 @@ def test_add_recommendation_authenticated_invalid_finding_id(client, test_user, 
     """
     login(test_user)
     invalid_id = 99999
-    recommendation_data = {'title': 'Rec for invalid finding', 'priority': 'Low'}
+    recommendation_data = {"title": "Rec for invalid finding", "priority": "Low"}
     response = client.post(
-        url_for('risk.add_recommendation', finding_id=invalid_id),
-        json=recommendation_data
+        url_for("risk.add_recommendation", finding_id=invalid_id),
+        json=recommendation_data,
     )
     assert response.status_code == 404
