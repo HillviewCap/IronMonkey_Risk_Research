@@ -39,7 +39,7 @@ def favicon():
 def login():
     """Handle user login"""
     if current_user.is_authenticated:
-        return redirect(url_for("client.dashboard"))
+        return redirect(url_for("dashboard.index"))
 
     form = LoginForm()
     conn = None  # Initialize conn
@@ -99,7 +99,7 @@ def login():
                     
                     next_page = request.args.get("next")
                     if not next_page or url_parse(next_page).netloc != "":
-                        next_page = url_for("client.dashboard")
+                        next_page = url_for("dashboard.index")
                     
                     resp = redirect(next_page)
                     # If in development environment, explicitly ensure cookies are not secure
@@ -138,7 +138,7 @@ def register():
     """Handle user registration"""
     print("Entering register route")
     if current_user.is_authenticated:
-        return redirect(url_for("client.dashboard"))
+        return redirect(url_for("dashboard.index"))
 
     form = RegistrationForm()
     conn = None  # Initialize conn
@@ -182,7 +182,7 @@ def register():
 def reset_password_request():
     """Handle password reset request"""
     if current_user.is_authenticated:
-        return redirect(url_for("client.dashboard"))
+        return redirect(url_for("dashboard.index"))
 
     # Placeholder for password reset logic
     return render_template("auth/reset_password_request.html")
@@ -192,7 +192,7 @@ def reset_password_request():
 def reset_password(token):
     """Handle password reset with token"""
     if current_user.is_authenticated:
-        return redirect(url_for("client.dashboard"))
+        return redirect(url_for("dashboard.index"))
 
     # Placeholder for password reset validation
     return render_template("auth/reset_password.html")

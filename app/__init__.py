@@ -94,9 +94,15 @@ def create_app(config_name='default'):
     
     from app.blueprints.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+    from app.blueprints.dashboard import dashboard_bp
+
+    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    from flask_login import current_user # Import current_user
 
     @app.route('/')
     def index():
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard.index'))
         return redirect(url_for('auth.login'))
 
     from datetime import datetime
