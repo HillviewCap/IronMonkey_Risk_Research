@@ -7,7 +7,6 @@ import json
 from app import db
 from sqlalchemy import CheckConstraint
 from sqlalchemy.dialects.postgresql import JSONB
-from geoalchemy2 import Geometry
 
 
 class Client(db.Model):
@@ -122,7 +121,8 @@ class ClientAsset(db.Model):
     )
     location_id = db.Column(db.Integer, db.ForeignKey("clients_locations.id"))
     technical_details = db.Column(JSONB)
-    geo_location = db.Column(Geometry("POINT", srid=4326))
+    # Instead of using PostGIS geometry type, we'll use regular lat/lon columns
+    # geo_location = db.Column(Geometry("POINT", srid=4326))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
