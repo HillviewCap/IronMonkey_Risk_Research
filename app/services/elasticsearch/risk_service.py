@@ -30,8 +30,12 @@ class RiskSearchService(ElasticsearchService):
             'name': assessment.name,
             'description': assessment.description,
             'methodology': assessment.methodology,
+            'assessment_type': assessment.assessment_type,
             'status': assessment.status,
+            'assigned_user_id': assessment.assigned_user_id,
             'risk_score': assessment.risk_score,
+            'framework_scores': assessment.framework_scores,
+            'scoring_config_id': assessment.scoring_config_id,
             'assessment_date': assessment.assessment_date.isoformat() if assessment.assessment_date else None,
             'created_at': assessment.created_at.isoformat() if assessment.created_at else None,
             'updated_at': assessment.updated_at.isoformat() if assessment.updated_at else None,
@@ -47,7 +51,14 @@ class RiskSearchService(ElasticsearchService):
                 'description': finding.description,
                 'risk_level': finding.risk_level,
                 'likelihood': finding.likelihood,
-                'asset_id': finding.asset_id
+                'asset_id': finding.asset_id,
+                'framework_category': finding.framework_category,
+                'attack_type': finding.attack_type,
+                'connection_type_id': finding.connection_type_id,
+                'conflict_id': finding.conflict_id,
+                'actor_id': finding.actor_id,
+                'status': finding.status,
+                'score_contribution': finding.score_contribution
             })
         
         # Add recommendations
@@ -57,7 +68,11 @@ class RiskSearchService(ElasticsearchService):
                 'title': recommendation.title,
                 'description': recommendation.description,
                 'priority': recommendation.priority,
-                'status': recommendation.status
+                'status': recommendation.status,
+                'finding_id': recommendation.finding_id,
+                'implementation_cost': recommendation.implementation_cost,
+                'implementation_time': recommendation.implementation_time,
+                'assigned_user_id': recommendation.assigned_user_id
             })
         
         return cls.index_document(cls.INDEX_NAME, assessment.id, document)
@@ -85,6 +100,8 @@ class RiskSearchService(ElasticsearchService):
             {"match": {"description": {"query": query_string, "boost": 2}}},
             {"match": {"findings.title": {"query": query_string, "boost": 2}}},
             {"match": {"findings.description": {"query": query_string}}},
+            {"match": {"findings.framework_category": {"query": query_string, "boost": 1.5}}},
+            {"match": {"findings.attack_type": {"query": query_string, "boost": 1.5}}},
             {"match": {"recommendations.title": {"query": query_string, "boost": 2}}},
             {"match": {"recommendations.description": {"query": query_string}}}
         ]
