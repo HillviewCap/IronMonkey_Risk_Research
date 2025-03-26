@@ -48,26 +48,10 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         try:
-            # Use SQLAlchemy session to find user
-            result = db.session.execute(
-                text("SELECT * FROM users.users_accounts WHERE username = :username"),
-                {'username': form.username.data}
-            )
-            row = result.fetchone()
+            # Use SQLAlchemy ORM to find the user
+            user = db.session.query(User).filter_by(username=form.username.data).first()
 
-            if row:
-                user = User()
-                user.id = row[0]
-                user.username = row[1]
-                user.email = row[2]
-                user.password_hash = row[3]
-                user.first_name = row[4]
-                user.last_name = row[5]
-                user.is_active = row[6] # Assign to the correct attribute name
-                user.is_admin = row[7]
-                user.created_at = row[8]
-                user.last_login = row[9]
-
+            if user:
                 # DEBUGGING PASSWORD CHECK
                 print(f"DEBUG: DB Hash for {user.username}: {user.password_hash}")
                 password_check_result = user.check_password(form.password.data)
