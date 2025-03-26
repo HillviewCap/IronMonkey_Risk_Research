@@ -1,34 +1,36 @@
 from sqlalchemy import or_
-from app.models.client import Organization, Location
-from app.utils.db import db
+from app.models.client import Client, ClientLocation  # Renamed imports
+from app import db  # Corrected import
 
 
 def search_clients(query=None, industry=None, country=None):
-    q = db.session.query(Organization, Location).join(
-        Location, Organization.id == Location.organization_id
+    # Use correct class names Client and ClientLocation
+    q = db.session.query(Client, ClientLocation).join(
+        ClientLocation, Client.id == ClientLocation.client_id  # Use correct foreign key
     )
     if query:
         search_str = f"%{query}%"
         q = q.filter(
             or_(
-                Organization.name.ilike(search_str),
-                Organization.industry.ilike(search_str),
-                Location.city.ilike(search_str),
+                Client.name.ilike(search_str),
+                Client.industry.ilike(search_str),
+                ClientLocation.city.ilike(search_str),
             )
         )
     if industry:
-        q = q.filter(Organization.industry == industry)
+        q = q.filter(Client.industry == industry)
     if country:
-        q = q.filter(Location.country == country)
+        q = q.filter(ClientLocation.country == country)
     results = q.all()
     clients = {}
-    for org, loc in results:
-        if org.id not in clients:
-            clients[org.id] = {
-                "id": org.id,
-                "name": org.name,
-                "industry": org.industry,
+    # Use correct variable names client and loc
+    for client, loc in results:
+        if client.id not in clients:
+            clients[client.id] = {
+                "id": client.id,
+                "name": client.name,
+                "industry": client.industry,
                 "locations": [],
             }
-        clients[org.id]["locations"].append({"city": loc.city, "country": loc.country})
+        clients[client.id]["locations"].append({"city": loc.city, "country": loc.country})
     return list(clients.values())
