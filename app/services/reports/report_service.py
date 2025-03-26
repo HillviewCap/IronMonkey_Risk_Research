@@ -5,6 +5,7 @@ import os
 import json
 from datetime import datetime
 from flask import current_app, render_template
+from weasyprint import HTML
 
 class ReportService:
     """Service for generating reports"""
@@ -45,13 +46,16 @@ class ReportService:
         if format == 'html':
             return html_content
         elif format == 'pdf':
-            # Generate PDF report (requires additional packages like WeasyPrint)
+            # Generate PDF report using WeasyPrint
             try:
-                # Placeholder for PDF generation code
-                # This would require additional setup to implement
-                return None
+                # We need to provide a base_url for WeasyPrint to find static assets (like CSS)
+                # Assuming static files are served from '/static' relative to the app root
+                base_url = current_app.config.get('SERVER_NAME') or 'http://localhost:5000' # Fallback for local dev
+                pdf_content = HTML(string=html_content, base_url=base_url).write_pdf()
+                return pdf_content
             except Exception as e:
-                current_app.logger.error(f"Error generating PDF report: {str(e)}")
+                current_app.logger.error(f"Error generating PDF report with WeasyPrint: {str(e)}")
+                # Consider raising a specific exception or returning an error indicator
                 return None
         else:
             current_app.logger.error(f"Unsupported report format: {format}")

@@ -1,6 +1,7 @@
 """
 Routes for risk assessment blueprint
 """
+from flask import render_template, redirect, url_for, flash, request, jsonify, Response
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app.blueprints.risk import risk_bp
@@ -9,6 +10,7 @@ from app.models.client import Client
 from app.models.framework import ScoringConfiguration
 from app.services.risk.scoring_service import ScoringService
 from app.services.elasticsearch.risk_service import RiskSearchService
+from app.services.reports.report_service import ReportService
 from app import db
 from datetime import datetime
 import json
@@ -461,3 +463,42 @@ def add_recommendation(finding_id):
             'status': 'error',
             'message': f'Error adding recommendation: {str(e)}'
         }), 500
+
+@risk_bp.route('/api/assessments/<int:assessment_id>/report', methods=['GET'])
+@login_required
+def generate_assessment_report_api(assessment_id):
+    """Generate and return an assessment report (HTML or PDF)"""
+    assessment = Assessment.query.get_or_404(assessment_id)
+    report_format = request.args.get('format', 'html').lower()
+
+    if report_format not in ['html', 'pdf']:
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid report format requested. Use "html" or "pdf".'
+        }), 400
+
+    report_content = ReportService.generate_assessment_report(assessment, format=report_format)
+
+    if report_content is None:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to generate {report_format.upper()} report for assessment {assessment_id}'
+        }), 500
+
+    if report_format == 'pdf':
+        # Set headers for PDF download
+        headers = {
+            'Content-Disposition': f'attachment;filename=assessment_{assessment_id}_report.pdf'
+        }
+        return Response(
+            report_content,
+            mimetype='application/pdf',
+            headers=headers
+        )
+    else: # HTML
+        # Return HTML directly
+        return Response(
+            report_content,
+            mimetype='text/html'
+        )
+
