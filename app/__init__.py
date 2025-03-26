@@ -42,13 +42,13 @@ def create_app(config_name='default'):
     
     # Initialize extensions with app
     db.init_app(app)
+    # Initialize login_manager BEFORE session handling (Trying this for test context issue)
     login_manager.init_app(app)
-    csrf.init_app(app)
-    migrate.init_app(app, db)
-    
-    # Initialize session handling
     from flask_session import Session
     Session(app)
+    # Initialize other extensions
+    csrf.init_app(app)
+    migrate.init_app(app, db)
     
     # Set up Redis connection for session storage
     try:
@@ -101,7 +101,12 @@ def create_app(config_name='default'):
 
     @app.route('/')
     def index():
-        if current_user.is_authenticated:
+        # Handle both cases where is_authenticated could be a property or a method
+        is_authenticated = current_user.is_authenticated
+        if callable(is_authenticated):
+            is_authenticated = is_authenticated()
+            
+        if is_authenticated:
             return redirect(url_for('dashboard.index'))
         return redirect(url_for('auth.login'))
 
