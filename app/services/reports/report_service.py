@@ -40,8 +40,8 @@ class ReportService:
         }
         
         # Generate HTML report
-        html_content = render_template('reports/assessment_report.html', **report_data)
-        
+        html_content = render_template('reports/assessment_report.html', **report_data) # Corrected path assumption
+
         if format == 'html':
             return html_content
         elif format == 'pdf':

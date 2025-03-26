@@ -255,14 +255,14 @@ graph TD
 ### Pending Items
 
 *   **Frontend Components**:
-    *   ⏳ Assessment dashboard/list view with framework-specific filters
-    *   ⏳ Assessment detail view with framework scores visualization
-    *   ⏳ Finding management interface with framework categorization
-    *   ⏳ Recommendation management interface
+    *   ✅ Assessment dashboard/list view (basic structure, filters pending backend)
+    *   ✅ Assessment detail view (basic structure, score viz pending backend)
+    *   ✅ Finding management interface (modal structure added to detail view)
+    *   ✅ Recommendation management interface (modal structure added to detail view)
 
 *   **Report Generation**:
-    *   ⏳ Report templates reflecting the framework structure
-    *   ⏳ PDF/HTML report generation functionality
+    *   ✅ Report templates reflecting the framework structure (HTML template created)
+    *   ⏳ PDF/HTML report generation functionality (Service logic pending)
 
 *   **Testing**:
     *   ⏳ Unit tests for scoring algorithms
