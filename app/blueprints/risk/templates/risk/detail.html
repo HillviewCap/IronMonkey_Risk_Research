@@ -1,0 +1,791 @@
+{% extends "base.html" %} {% block title %}Assessment Details{% endblock %} {%
+block content %}
+<div
+  class="container mx-auto px-4 py-8"
+  x-data="{
+    showFindingModal: false,
+    showRecommendationModal: false,
+    currentFindingId: null,
+    findingFormData: { title: '', description: '', risk_level: 'Low', likelihood: '', impact: '', asset_id: '', evidence: '', framework_category: '', attack_type: '', connection_type_id: '', conflict_id: '', actor_id: '' },
+    recommendationFormData: { title: '', description: '', priority: 'Medium', implementation_cost: '', implementation_time: '', assigned_user_id: '' },
+    riskScore: {{ assessment.risk_score | tojson }}, // Initialize with server value
+    isEditMode: false, // Flag for finding modal mode (add vs edit)
+    currentFindingData: null, // Holds data for the finding being edited
+    isEditModeRec: false, // Flag for recommendation modal mode
+    currentRecommendationData: null, // Holds data for recommendation being edited
+    frameworkScores: {{ framework_scores | tojson }} // Initialize with server value
+}"
+>
+  <!-- Header Section -->
+  <div
+    class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200"
+  >
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">
+        Assessment: {{ assessment.name | default('N/A') }}
+      </h1>
+      <p class="text-lg text-gray-600">
+        Client: {{ client.name | default('N/A') }}
+      </p>
+    </div>
+    <div class="flex items-center space-x-2">
+      <span
+        class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full {% if assessment.status == 'complete' %} bg-green-100 text-green-800 {% elif assessment.status == 'in_progress' %} bg-yellow-100 text-yellow-800 {% elif assessment.status == 'review' %} bg-blue-100 text-blue-800 {% else %} bg-gray-100 text-gray-800 {% endif %}"
+      >
+        {{ assessment.status | capitalize | default('Status') }}
+      </span>
+      <a
+        href="{{ url_for('risk.assessment_edit', assessment_id=assessment.id) }}"
+        class="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2"
+      >
+        Edit Assessment
+      </a>
+      <button
+        @click="calculateScore"
+        class="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2"
+      >
+        Calculate Score
+      </button>
+      <a
+        href="{{ url_for('risk.generate_assessment_report_api', assessment_id=assessment.id, format='pdf') }}"
+        target="_blank"
+        class="py-2 px-4 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2"
+      >
+        Generate Report (PDF)
+      </a>
+    </div>
+  </div>
+
+  <!-- Assessment Metadata -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-4 shadow rounded-lg">
+      <h3 class="text-sm font-medium text-gray-500">Assessment Type</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">
+        {{ assessment.assessment_type | default('N/A') }}
+      </p>
+    </div>
+    <div class="bg-white p-4 shadow rounded-lg">
+      <h3 class="text-sm font-medium text-gray-500">Assigned Analyst</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">
+        {{ assessment.assigned_user.username | default('N/A') }}
+      </p>
+    </div>
+    <div class="bg-white p-4 shadow rounded-lg">
+      <h3 class="text-sm font-medium text-gray-500">Assessment Date</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">
+        {{ assessment.assessment_date.strftime('%Y-%m-%d') if
+        assessment.assessment_date else 'N/A' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="mb-8 bg-white p-6 shadow rounded-lg">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">Description</h2>
+    <p class="text-gray-700">
+      {{ assessment.description | default('No description provided.') }}
+    </p>
+  </div>
+
+  <!-- Framework Score Visualization -->
+  <!-- Framework Score Visualization (Alpine.js controlled) -->
+  <div class="mb-8 bg-white p-6 shadow rounded-lg">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">
+      Framework Risk Score
+    </h2>
+    <div class="flex items-center justify-center h-40 bg-gray-50 rounded-md">
+      <template x-if="riskScore !== null">
+        <div class="text-center">
+          <p
+            class="text-6xl font-bold"
+            :class="{
+              'text-red-600': riskScore >= 75,
+              'text-orange-600': riskScore >= 50 && riskScore < 75,
+              'text-yellow-600': riskScore >= 25 && riskScore < 50,
+              'text-green-600': riskScore < 25
+            }"
+            x-text="riskScore.toFixed(1)"
+          ></p>
+          <p class="text-sm text-gray-600">Overall Risk Score</p>
+        </div>
+      </template>
+      <template x-if="riskScore === null">
+        <p class="text-gray-500">Score not calculated yet.</p>
+      </template>
+    </div>
+    <template x-if="frameworkScores && Object.keys(frameworkScores).length > 0">
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <template x-for="(score, category) in frameworkScores" :key="category">
+          <div>
+            <span
+              class="font-medium capitalize"
+              x-text="category.replace(/_/g, ' ')"
+            ></span
+            >:
+            <span x-text="score !== null ? score.toFixed(1) : 'N/A'"></span>
+          </div>
+        </template>
+      </div>
+    </template>
+    {% if scoring_config %}
+    <div class="mt-4 text-xs text-gray-500">
+      Scoring Configuration: {{ scoring_config.name }} (Version: {{
+      scoring_config.version }})
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Findings Section -->
+  <div class="mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">Findings</h2>
+      <button
+        type="button"
+        @click="showFindingModal = true"
+        class="py-1 px-3 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2"
+      >
+        Add Finding
+      </button>
+    </div>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <ul class="divide-y divide-gray-200">
+        {% if findings %} {% for finding in findings %}
+        <li class="px-4 py-4 sm:px-6">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-indigo-600 truncate">
+              Finding #{{ finding.id }}: {{ finding.title }}
+            </p>
+            <div class="ml-2 flex-shrink-0 flex space-x-2">
+              <p
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if finding.risk_level == 'Critical' %} bg-red-100 text-red-800 {% elif finding.risk_level == 'High' %} bg-orange-100 text-orange-800 {% elif finding.risk_level == 'Medium' %} bg-yellow-100 text-yellow-800 {% else %} bg-green-100 text-green-800 {% endif %}"
+              >
+                {{ finding.risk_level }}
+              </p>
+              <p
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if finding.status == 'open' %} bg-blue-100 text-blue-800 {% elif finding.status == 'resolved' %} bg-green-100 text-green-800 {% else %} bg-gray-100 text-gray-800 {% endif %}"
+              >
+                {{ finding.status|capitalize }}
+              </p>
+            </div>
+          </div>
+          <div class="mt-2 sm:flex sm:justify-between">
+            <div class="sm:flex space-x-4">
+              <p class="flex items-center text-sm text-gray-500">
+                Category: {{ finding.framework_category | default('N/A') }}
+              </p>
+              {% if finding.score_contribution is not none %}
+              <p class="flex items-center text-sm text-gray-500">
+                Score Contribution: {{ "%.1f"|format(finding.score_contribution)
+                }}
+              </p>
+              {% endif %}
+            </div>
+            <button
+              type="button"
+              @click="openEditFindingModal({{ finding.id }})"
+              class="text-sm font-medium text-blue-600 hover:text-blue-800 mr-4"
+            >
+              Edit Finding
+            </button>
+
+            <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+              <!-- Add View Details link/button if needed -->
+              <button
+                type="button"
+                @click="showRecommendationModal = true; currentFindingId = {{ finding.id }}"
+                class="text-sm font-medium text-green-600 hover:text-green-800"
+              >
+                Add Recommendation
+              </button>
+            </div>
+          </div>
+          {% if finding.description %}
+          <p class="mt-2 text-sm text-gray-600">{{ finding.description }}</p>
+          {% endif %}
+        </li>
+        {% endfor %} {% else %}
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No findings added yet.
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Recommendations Section -->
+  <div>
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">Recommendations</h2>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <ul class="divide-y divide-gray-200">
+        {% if recommendations %} {% for recommendation in recommendations %}
+        <li class="px-4 py-4 sm:px-6">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-900 truncate">
+              Rec #{{ recommendation.id }}: {{ recommendation.title }}
+            </p>
+            <div class="ml-2 flex-shrink-0 flex space-x-2">
+              <p
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if recommendation.priority == 'High' %} bg-red-100 text-red-800 {% elif recommendation.priority == 'Medium' %} bg-yellow-100 text-yellow-800 {% else %} bg-green-100 text-green-800 {% endif %}"
+              >
+                {{ recommendation.priority }} Priority
+              </p>
+              <p
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if recommendation.status == 'open' %} bg-blue-100 text-blue-800 {% elif recommendation.status == 'complete' %} bg-green-100 text-green-800 {% else %} bg-gray-100 text-gray-800 {% endif %}"
+              >
+                {{ recommendation.status|capitalize }}
+              </p>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-gray-600">
+            Linked to Finding #{{ recommendation.finding_id }}
+          </div>
+          <div class="mt-1 flex items-center text-sm text-gray-500">
+            <button
+              type="button"
+              @click="openEditRecommendationModal({{ recommendation.id }})"
+              class="text-sm font-medium text-blue-600 hover:text-blue-800"
+            >
+              Edit Recommendation
+            </button>
+          </div>
+
+          {% if recommendation.description %}
+          <p class="mt-1 text-sm text-gray-600">
+            {{ recommendation.description }}
+          </p>
+          {% endif %}
+        </li>
+        {% endfor %} {% else %}
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No recommendations added yet.
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Finding Modal -->
+  <div
+    x-show="showFindingModal"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"
+    aria-hidden="true"
+    @click="showFindingModal = false; isEditMode = false; currentFindingData = null"
+  ></div>
+
+  <div
+    x-show="showFindingModal"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    class="fixed inset-0 z-50 overflow-y-auto"
+  >
+    <div
+      class="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0"
+    >
+      <div
+        @click.stop
+        class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full"
+      >
+        <form @submit.prevent="submitFindingForm">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3
+                  class="text-lg leading-6 font-medium text-gray-900"
+                  id="modal-title"
+                  x-text="isEditMode ? 'Edit Finding #' + currentFindingData?.id : 'Add Finding'"
+                >
+                  <!-- Content replaced by x-text -->
+                </h3>
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label
+                      for="finding-title"
+                      class="block text-sm font-medium text-gray-700"
+                      >Title*</label
+                    >
+                    <input
+                      type="text"
+                      id="finding-title"
+                      x-model="findingFormData.title"
+                      required
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="finding-description"
+                      class="block text-sm font-medium text-gray-700"
+                      >Description</label
+                    >
+                    <textarea
+                      id="finding-description"
+                      x-model="findingFormData.description"
+                      rows="3"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    ></textarea>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="finding-risk-level"
+                        class="block text-sm font-medium text-gray-700"
+                        >Risk Level*</label
+                      >
+                      <select
+                        id="finding-risk-level"
+                        x-model="findingFormData.risk_level"
+                        required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        for="finding-category"
+                        class="block text-sm font-medium text-gray-700"
+                        >Framework Category</label
+                      >
+                      <input
+                        type="text"
+                        id="finding-category"
+                        x-model="findingFormData.framework_category"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                      <!-- Consider making this a select based on available framework categories -->
+                    </div>
+                  </div>
+                  <!-- Add other fields as needed: likelihood, impact, asset_id, evidence, attack_type, connection_type_id, conflict_id, actor_id -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="submit"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+              x-text="isEditMode ? 'Update Finding' : 'Save Finding'"
+            >
+              <!-- Content replaced by x-text -->
+            </button>
+            <button
+              type="button"
+              @click="showFindingModal = false; isEditMode = false; currentFindingData = null"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendation Modal -->
+  <div
+    x-show="showRecommendationModal"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"
+    aria-hidden="true"
+    @click="showRecommendationModal = false; isEditModeRec = false; currentRecommendationData = null"
+  ></div>
+
+  <div
+    x-show="showRecommendationModal"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    class="fixed inset-0 z-50 overflow-y-auto"
+  >
+    <div
+      class="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0"
+    >
+      <div
+        @click.stop
+        class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full"
+      >
+        <form @submit.prevent="submitRecommendationForm">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3
+                  class="text-lg leading-6 font-medium text-gray-900"
+                  id="rec-modal-title"
+                  x-html="isEditModeRec ? 'Edit Recommendation #' + currentRecommendationData?.id + ' (for Finding #' + currentFindingId + ')' : 'Add Recommendation (for Finding #<span x-text=\'currentFindingId\'></span>)'"
+                >
+                  <!-- Content replaced by x-html -->
+                </h3>
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label
+                      for="rec-title"
+                      class="block text-sm font-medium text-gray-700"
+                      >Title*</label
+                    >
+                    <input
+                      type="text"
+                      id="rec-title"
+                      x-model="recommendationFormData.title"
+                      required
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="rec-description"
+                      class="block text-sm font-medium text-gray-700"
+                      >Description</label
+                    >
+                    <textarea
+                      id="rec-description"
+                      x-model="recommendationFormData.description"
+                      rows="3"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    ></textarea>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="rec-priority"
+                        class="block text-sm font-medium text-gray-700"
+                        >Priority*</label
+                      >
+                      <select
+                        id="rec-priority"
+                        x-model="recommendationFormData.priority"
+                        required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        for="rec-assigned"
+                        class="block text-sm font-medium text-gray-700"
+                        >Assigned To (User ID)</label
+                      >
+                      <input
+                        type="number"
+                        id="rec-assigned"
+                        x-model="recommendationFormData.assigned_user_id"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                    </div>
+                  </div>
+                  <!-- Add other fields: implementation_cost, implementation_time -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="submit"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+              x-text="isEditModeRec ? 'Update Recommendation' : 'Save Recommendation'"
+            >
+              <!-- Content replaced by x-text -->
+            </button>
+            <button
+              type="button"
+              @click="showRecommendationModal = false; isEditModeRec = false; currentRecommendationData = null"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Function to get CSRF token from meta tag (if using Flask-WTF pattern)
+  function getCsrfToken() {
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      return csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}'; // Fallback to Jinja render
+  }
+
+  // Function to handle API responses, show alerts, and return data on success
+  async function handleApiResponse(response, successMessage, errorMessagePrefix) {
+      const data = await response.json();
+      if (response.ok && data.status === 'success') {
+          alert(successMessage);
+          return data.data || true; // Return data payload or true if no data
+      } else {
+          const message = data.error?.message || 'An unknown error occurred.';
+          alert(`${errorMessagePrefix}: ${message}`);
+          console.error('API Error:', data.error || data);
+          return false; // Indicate failure
+      }
+  }
+
+  function calculateScore() {
+      const assessmentId = {{ assessment.id }};
+      const url = `/api/v1/risk-assessments/${assessmentId}/calculate-score`; // Updated URL
+
+      fetch(url, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+          }
+      })
+      .then(response => handleApiResponse(response, 'Score calculated successfully!', 'Error calculating score'))
+      .then(result => { // 'result' now contains the data payload on success, or false on failure
+  async function openEditFindingModal(findingId) {
+      const url = `/api/v1/findings/${findingId}`;
+      console.log(`Fetching finding data from: ${url}`);
+
+      try {
+          const response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                  'Accept': 'application/json',
+                  'X-CSRFToken': getCsrfToken()
+              }
+          });
+
+          const result = await handleApiResponse(response, 'Finding data loaded.', 'Error loading finding data');
+
+          if (result && typeof result === 'object') {
+              this.currentFindingData = result; // Store the full finding data
+              // Populate form data - ensure all relevant fields are mapped
+              this.findingFormData = {
+                  title: result.title || '',
+                  description: result.description || '',
+                  risk_level: result.risk_level || 'Low',
+                  likelihood: result.likelihood || '',
+                  impact: result.impact || '',
+                  asset_id: result.asset_id || '',
+                  evidence: result.evidence || '',
+                  framework_category: result.framework_category || '',
+                  attack_type: result.attack_type || '',
+                  connection_type_id: result.connection_type_id || '',
+                  conflict_id: result.conflict_id || '',
+                  actor_id: result.actor_id || ''
+                  // Add any other fields present in the modal form
+              };
+              this.isEditMode = true;
+              this.showFindingModal = true;
+          } else {
+              console.error('Failed to load finding data or data format incorrect.');
+              // Optionally show an error message to the user
+          }
+      } catch (error) {
+          console.error('Fetch Error in openEditFindingModal:', error);
+          alert('A network error occurred while loading finding details.');
+      }
+  }
+
+
+          if (result !== false && typeof result === 'object') {
+              // Update Alpine data properties directly
+              this.riskScore = result.risk_score;
+              this.frameworkScores = result.framework_scores;
+              // No page reload needed!
+          } else if (result === true) {
+              // Handle case where API might return success but no data (optional, defensive)
+              console.log("Score calculation reported success, but no score data returned.");
+          }
+      })
+      .catch(error => {
+          console.error('Fetch Error:', error);
+          alert('A network error occurred while calculating the score.');
+      });
+  }
+
+  function submitFindingForm() {
+      const assessmentId = {{ assessment.id }};
+      const formData = this.findingFormData;
+
+      // Determine URL and Method based on mode
+      let url;
+      let method;
+      let successMessage;
+      let errorMessagePrefix;
+
+      if (this.isEditMode) {
+          const findingId = this.currentFindingData?.id;
+          if (!findingId) {
+              alert('Error: Finding ID missing for update.');
+              return;
+          }
+          url = `/api/v1/findings/${findingId}`;
+          method = 'PUT';
+          successMessage = 'Finding updated successfully!';
+          errorMessagePrefix = 'Error updating finding';
+      } else {
+          url = `/api/v1/risk-assessments/${assessmentId}/findings`;
+          method = 'POST';
+          successMessage = 'Finding added successfully!';
+          errorMessagePrefix = 'Error adding finding';
+      }
+
+      // Basic validation
+      if (!formData.title?.trim() || !formData.risk_level?.trim()) {
+          alert('Please fill in all required fields (Title, Risk Level).');
+          return;
+      }
+
+      fetch(url, {
+          method: method,
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+          },
+          body: JSON.stringify(formData)
+      })
+      .then(response => handleApiResponse(response, successMessage, errorMessagePrefix))
+      .then(success => {
+          if (success) {
+              this.showFindingModal = false; // Close modal
+              // Reset form data and state regardless of mode
+              this.findingFormData = { title: '', description: '', risk_level: 'Low', likelihood: '', impact: '', asset_id: '', evidence: '', framework_category: '', attack_type: '', connection_type_id: '', conflict_id: '', actor_id: '' };
+              this.isEditMode = false;
+              this.currentFindingData = null;
+              window.location.reload(); // Reload to see changes (Add or Update)
+  async function openEditRecommendationModal(recommendationId) {
+      const url = `/api/v1/recommendations/${recommendationId}`;
+      console.log(`Fetching recommendation data from: ${url}`);
+
+      try {
+          const response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                  'Accept': 'application/json',
+                  'X-CSRFToken': getCsrfToken()
+              }
+          });
+
+          const result = await handleApiResponse(response, 'Recommendation data loaded.', 'Error loading recommendation data');
+
+          if (result && typeof result === 'object') {
+              this.currentRecommendationData = result; // Store the full recommendation data
+              // Populate form data - ensure all relevant fields are mapped
+              this.recommendationFormData = {
+                  title: result.title || '',
+                  description: result.description || '',
+                  priority: result.priority || 'Medium',
+                  implementation_cost: result.implementation_cost || '',
+                  implementation_time: result.implementation_time || '',
+                  assigned_user_id: result.assigned_user_id || ''
+                  // Add any other fields present in the modal form
+              };
+              this.currentFindingId = result.finding_id; // Ensure currentFindingId is set for context
+              this.isEditModeRec = true;
+              this.showRecommendationModal = true;
+          } else {
+              console.error('Failed to load recommendation data or data format incorrect.');
+          }
+      } catch (error) {
+          console.error('Fetch Error in openEditRecommendationModal:', error);
+          alert('A network error occurred while loading recommendation details.');
+      }
+  }
+
+
+          }
+          // If not success, modal stays open for correction
+      })
+      .catch(error => {
+          console.error('Fetch Error:', error);
+          alert(`A network error occurred while ${this.isEditMode ? 'updating' : 'adding'} the finding.`);
+          // Optionally reset state even on error?
+          // this.isEditMode = false;
+          // this.currentFindingData = null;
+      });
+  }
+
+  function submitRecommendationForm() {
+      const formData = this.recommendationFormData;
+
+      // Determine URL, Method, and messages based on mode
+      let url;
+      let method;
+      let successMessage;
+      let errorMessagePrefix;
+
+      if (this.isEditModeRec) {
+          const recommendationId = this.currentRecommendationData?.id;
+          if (!recommendationId) {
+              alert('Error: Recommendation ID missing for update.');
+              return;
+          }
+          url = `/api/v1/recommendations/${recommendationId}`;
+          method = 'PUT';
+          successMessage = 'Recommendation updated successfully!';
+          errorMessagePrefix = 'Error updating recommendation';
+      } else {
+          const findingId = this.currentFindingId;
+          if (!findingId) {
+              alert('Error: No finding selected for recommendation.');
+              return;
+          }
+          url = `/api/v1/findings/${findingId}/recommendations`;
+          method = 'POST';
+          successMessage = 'Recommendation added successfully!';
+          errorMessagePrefix = 'Error adding recommendation';
+      }
+
+      // Basic validation
+      if (!formData.title?.trim() || !formData.priority?.trim()) {
+          alert('Please fill in all required fields (Title, Priority).');
+          return;
+      }
+
+      fetch(url, {
+          method: method,
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+          },
+          body: JSON.stringify(formData)
+      })
+      .then(response => handleApiResponse(response, successMessage, errorMessagePrefix))
+      .then(success => {
+          if (success) {
+              this.showRecommendationModal = false; // Close modal
+              // Reset form data and state
+              this.recommendationFormData = { title: '', description: '', priority: 'Medium', implementation_cost: '', implementation_time: '', assigned_user_id: '' };
+              this.isEditModeRec = false;
+              this.currentRecommendationData = null;
+              // currentFindingId should remain if just adding another rec to the same finding
+              window.location.reload(); // Reload to see changes
+          }
+      })
+      .catch(error => {
+          console.error('Fetch Error:', error);
+          alert(`A network error occurred while ${this.isEditModeRec ? 'updating' : 'adding'} the recommendation.`);
+          // Optionally reset state on error?
+          // this.isEditModeRec = false;
+          // this.currentRecommendationData = null;
+      });
+  }
+</script>
+
+{% endblock %}
