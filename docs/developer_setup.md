@@ -9,8 +9,7 @@ Before you begin, ensure you have the following installed:
 - Python 3.10+ (https://www.python.org/downloads/)
 - Node.js 18+ and npm (https://nodejs.org/)
 - Git (https://git-scm.com/downloads)
-- PostgreSQL 15+ (optional for local development, can use Docker instead)
-- Docker (optional, for containerized services) (https://www.docker.com/products/docker-desktop/)
+- PostgreSQL 15+ (required for local development)
 
 ## Initial Setup
 
@@ -24,6 +23,7 @@ cd ironmonkey-risk-research
 ### 2. Create a Python Virtual Environment
 
 #### Using venv
+
 ```bash
 python -m venv venv
 ```
@@ -31,11 +31,13 @@ python -m venv venv
 #### Activate the virtual environment
 
 Windows:
+
 ```bash
 venv\Scripts\activate
 ```
 
 macOS/Linux:
+
 ```bash
 source venv/bin/activate
 ```
@@ -67,29 +69,24 @@ Update the `tailwind.config.js` file:
 
 ```javascript
 module.exports = {
-  content: [
-    './app/templates/**/*.html',
-    './app/static/src/**/*.js',
-  ],
+  content: ["./app/templates/**/*.html", "./app/static/src/**/*.js"],
   theme: {
     extend: {
       colors: {
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          500: "#0ea5e9",
+          600: "#0284c7",
+          700: "#0369a1",
+          800: "#075985",
+          900: "#0c4a6e",
         },
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-  ],
-}
+  plugins: [require("@tailwindcss/forms")],
+};
 ```
 
 ### 6. Create CSS Input File
@@ -139,15 +136,6 @@ Run migrations to create the schema:
 flask db init
 flask db migrate -m "Initial migration"
 flask db upgrade
-```
-
-### 9. Start Development Services (Docker)
-
-For convenience, you can use Docker to run required services:
-
-```bash
-# Start PostgreSQL, Elasticsearch, and Redis
-docker-compose up -d
 ```
 
 ### 10. Build Tailwind CSS
