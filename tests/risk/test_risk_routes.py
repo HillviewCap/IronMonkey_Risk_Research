@@ -36,8 +36,8 @@ def test_assessment_list_unauthenticated(client):
     THEN check it redirects to login (currently gets 200 OK unexpectedly)
     """
     response = client.get(url_for("risk.assessment_list"))
-    # TODO: Investigate why @login_required doesn't redirect here in tests (gets 200)
-    assert response.status_code == 200
+    # The @login_required decorator correctly redirects to login
+    assert response.status_code == 302
     # assert response.status_code == 302
     # assert response.location.startswith(url_for('auth.login', _external=False))
 
@@ -71,8 +71,8 @@ def test_assessment_detail_unauthenticated(client, test_assessment):
     response = client.get(
         url_for("risk.assessment_detail", assessment_id=test_assessment.id)
     )
-    # TODO: Investigate why @login_required doesn't redirect here in tests (gets 200)
-    assert response.status_code == 200
+    # The @login_required decorator correctly redirects to login
+    assert response.status_code == 302
     # assert response.status_code == 302
     # assert response.location.startswith(url_for('auth.login', _external=False))
 
@@ -119,10 +119,11 @@ def test_assessment_new_unauthenticated(client):
     """
     # client.cookie_jar.clear() # Removed incorrect cookie clearing
     response = client.get(url_for("risk.assessment_new"))
-    # TODO: Investigate why @login_required doesn't redirect here in tests (gets 200)
-    assert response.status_code == 200
-    # assert response.status_code == 302
-    # assert response.location.startswith(url_for('auth.login', _external=False)) # Check start due to 'next' param
+    # The @login_required decorator correctly redirects to login
+    assert response.status_code == 302
+    assert response.location.startswith(
+        url_for("auth.login", _external=False)
+    )  # Check start due to 'next' param
 
 
 def test_assessment_new_get_authenticated(
@@ -210,10 +211,11 @@ def test_assessment_edit_unauthenticated(client, test_assessment):
     response = client.get(
         url_for("risk.assessment_edit", assessment_id=test_assessment.id)
     )
-    # TODO: Investigate why @login_required doesn't redirect here in tests (gets 200)
-    assert response.status_code == 200
-    # assert response.status_code == 302
-    # assert response.location.startswith(url_for('auth.login', _external=False)) # Check start due to 'next' param
+    # The @login_required decorator correctly redirects to login
+    assert response.status_code == 302
+    assert response.location.startswith(
+        url_for("auth.login", _external=False)
+    )  # Check start due to 'next' param
 
 
 def test_assessment_edit_get_authenticated_valid_id(
@@ -285,10 +287,9 @@ def test_intelligence_feed_unauthenticated(client):
     THEN check it redirects to login (currently gets 200 OK unexpectedly)
     """
     response = client.get(url_for("risk.intelligence_feed"))
-    # TODO: Investigate why @login_required doesn't redirect here in tests (gets 200)
-    assert response.status_code == 200
-    # assert response.status_code == 302
-    # assert response.location.startswith(url_for('auth.login', _external=False))
+    # The @login_required decorator correctly redirects to login
+    assert response.status_code == 302
+    assert response.location.startswith(url_for("auth.login", _external=False))
 
 
 def test_intelligence_feed_authenticated(client, test_user, login):
@@ -313,10 +314,9 @@ def test_scenario_list_unauthenticated(client):
     THEN check it redirects to login (currently gets 200 OK unexpectedly)
     """
     response = client.get(url_for("risk.scenario_list"))
-    # TODO: Investigate why @login_required doesn't redirect here in tests (gets 200)
-    assert response.status_code == 200
-    # assert response.status_code == 302
-    # assert response.location.startswith(url_for('auth.login', _external=False))
+    # The @login_required decorator correctly redirects to login
+    assert response.status_code == 302
+    assert response.location.startswith(url_for("auth.login", _external=False))
 
 
 def test_scenario_list_authenticated(client, test_user, login):
