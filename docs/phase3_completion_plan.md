@@ -54,8 +54,8 @@ This plan outlines the remaining tasks required to complete Phase 3 of the IronM
   - Follow naming convention: `test_thing_being_tested_condition`.
   - Use AAA pattern (Arrange, Act, Assert).
 - **Integration Tests (`tests/api/` or `tests/risk/`):**
-  - ⏳ Test all refactored/new API endpoints with valid/invalid data, checking HTTP status codes and standard JSON responses.
-  - ⏳ Test web routes for rendering and form submission.
+  - ✅ Test all refactored/new API endpoints with valid/invalid data, checking HTTP status codes and standard JSON responses.
+  - ✅ Test web routes for rendering and form submission.
   - Follow naming convention.
   - Use AAA pattern.
 - **End-to-End Tests (Manual or Automated):**
