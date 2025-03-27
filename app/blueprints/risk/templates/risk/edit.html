@@ -1,0 +1,286 @@
+{% extends "base.html" %} {% block title %}{% if assessment %}Edit Risk
+Assessment{% else %}New Risk Assessment{% endif %}{% endblock %} {% block
+content %}
+<div class="container mx-auto px-4 py-8">
+  <div
+    class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200"
+  >
+    <h1 class="text-3xl font-bold text-gray-800">
+      {% if assessment %}Edit Risk Assessment{% else %}New Risk Assessment{%
+      endif %}
+    </h1>
+  </div>
+
+  <div
+    class="bg-white shadow overflow-hidden sm:rounded-lg p-6"
+    x-data="{
+             formData: {
+                 client_id: '{{ assessment.client_id if assessment else '' }}',
+                 name: '{{ assessment.name | e if assessment else '' }}', // Use 'e' filter for safety
+                 assessment_date: '{{ assessment.assessment_date.strftime('%Y-%m-%d') if assessment and assessment.assessment_date else '' }}',
+                 assessment_type: '{{ assessment.assessment_type if assessment else '' }}',
+                 status: '{{ assessment.status if assessment else 'draft' }}', // Default to draft for new
+                 scoring_config_id: '{{ assessment.scoring_config_id if assessment and assessment.scoring_config_id is not none else '' }}',
+                 description: '{{ assessment.description | e if assessment else '' }}' // Use 'e' filter for safety
+             },
+             isEditMode: {{ 'true' if assessment else 'false' }},
+             assessmentId: {{ assessment.id | tojson if assessment else 'null' }}
+         }"
+  >
+    <form @submit.prevent="submitAssessmentForm">
+      {# CSRF token will be sent via JS header, hidden input removed #} {% with
+      messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+      {% for category, message in messages %}
+      <div
+        class="mb-4 p-4 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}"
+      >
+        {{ message }}
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="client_id" class="block text-sm font-medium text-gray-700"
+            >Client *</label
+          >
+          <select
+            id="client_id"
+            name="client_id"
+            required
+            x-model="formData.client_id"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            <option value="">Select Client</option>
+            {% for client in clients %}
+            <option value="{{ client.id }}">
+              {# Selected handled by x-model #} {{ client.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700"
+            >Assessment Name *</label
+          >
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            x-model="formData.name"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+
+        <div>
+          <label
+            for="assessment_date"
+            class="block text-sm font-medium text-gray-700"
+            >Assessment Date *</label
+          >
+          <input
+            type="date"
+            id="assessment_date"
+            name="assessment_date"
+            required
+            x-model="formData.assessment_date"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+
+        <div>
+          <label
+            for="assessment_type"
+            class="block text-sm font-medium text-gray-700"
+            >Assessment Type</label
+          >
+          <select
+            id="assessment_type"
+            name="assessment_type"
+            x-model="formData.assessment_type"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            <option value="">Select Type</option>
+            {% for type in assessment_types %}
+            <option value="{{ type }}">
+              {# Selected handled by x-model #} {{ type }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div x-show="isEditMode">
+          <label for="status" class="block text-sm font-medium text-gray-700"
+            >Status</label
+          >
+          <select
+            id="status"
+            name="status"
+            x-model="formData.status"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            {% for status in statuses %}
+            <option value="{{ status }}">
+              {# Selected handled by x-model #} {{ status|capitalize }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label
+            for="scoring_config_id"
+            class="block text-sm font-medium text-gray-700"
+            >Scoring Configuration</label
+          >
+          <select
+            id="scoring_config_id"
+            name="scoring_config_id"
+            x-model="formData.scoring_config_id"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            <option value="">None</option>
+            {% for config in scoring_configs %}
+            <option value="{{ config.id }}">
+              {# Selected handled by x-model #} {{ config.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <label for="description" class="block text-sm font-medium text-gray-700"
+          >Description</label
+        >
+        <textarea
+          id="description"
+          name="description"
+          rows="4"
+          x-model="formData.description"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        ></textarea>
+      </div>
+
+      <div class="mt-8 flex justify-end">
+        <a
+          href="{{ url_for('risk.assessment_list') }}"
+          class="mr-4 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Cancel
+        </a>
+        <button
+          type="submit"
+          class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          {% if assessment %}Update Assessment{% else %}Create Assessment{%
+          endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Function to get CSRF token from meta tag (if using Flask-WTF pattern)
+  function getCsrfToken() {
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    return csrfMeta ? csrfMeta.getAttribute("content") : "{{ csrf_token() }}"; // Fallback to Jinja render
+  }
+
+  // Function to handle API responses, show alerts, and return data on success
+  async function handleApiResponse(
+    response,
+    successMessage,
+    errorMessagePrefix
+  ) {
+    const data = await response.json();
+    if (response.ok && data.status === "success") {
+      alert(successMessage);
+      return data.data || true; // Return data payload or true if no data
+    } else {
+      const message = data.error?.message || "An unknown error occurred.";
+      alert(`${errorMessagePrefix}: ${message}`);
+      console.error("API Error:", data.error || data);
+      return false; // Indicate failure
+    }
+  }
+
+  function submitAssessmentForm() {
+    const formData = this.formData;
+
+    // Determine URL and Method based on mode
+    let url;
+    let method;
+    let successMessage;
+    let errorMessagePrefix;
+    let redirectUrl;
+
+    if (this.isEditMode) {
+      const assessmentId = this.assessmentId;
+      if (!assessmentId) {
+        alert("Error: Assessment ID missing for update.");
+        return;
+      }
+      url = `/api/v1/risk-assessments/${assessmentId}`;
+      method = "PUT";
+      successMessage = "Assessment updated successfully!";
+      errorMessagePrefix = "Error updating assessment";
+      redirectUrl = `/risk/assessments/${assessmentId}`;
+    } else {
+      url = `/api/v1/risk-assessments`;
+      method = "POST";
+      successMessage = "Assessment created successfully!";
+      errorMessagePrefix = "Error creating assessment";
+      redirectUrl = "/risk/assessments"; // Will redirect to list view
+    }
+
+    // Basic validation
+    if (
+      !formData.client_id?.trim() ||
+      !formData.name?.trim() ||
+      !formData.assessment_date?.trim()
+    ) {
+      alert(
+        "Please fill in all required fields (Client, Name, Assessment Date)."
+      );
+      return;
+    }
+
+    fetch(url, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      body: JSON.stringify(formData),
+    })
+      .then((response) =>
+        handleApiResponse(response, successMessage, errorMessagePrefix)
+      )
+      .then((result) => {
+        if (result) {
+          // On success, redirect to the appropriate page
+          if (typeof result === "object" && result.id) {
+            // If we got back an ID, use that for the redirect
+            window.location.href = `/risk/assessments/${result.id}`;
+          } else {
+            // Otherwise use the predetermined redirect URL
+            window.location.href = redirectUrl;
+          }
+        }
+        // If not success, form stays open for correction
+      })
+      .catch((error) => {
+        console.error("Fetch Error:", error);
+        alert(
+          `A network error occurred while ${
+            this.isEditMode ? "updating" : "creating"
+          } the assessment.`
+        );
+      });
+  }
+</script>
+
+{% endblock %}
