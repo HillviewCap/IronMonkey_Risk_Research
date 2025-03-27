@@ -4,6 +4,7 @@ Risk assessment models
 from datetime import datetime
 import json
 from app import db
+from app.models.user import User
 from sqlalchemy.dialects.postgresql import JSONB
 
 class Assessment(db.Model):
@@ -29,6 +30,13 @@ class Assessment(db.Model):
     findings = db.relationship('Finding', backref='assessment', lazy='dynamic')
     recommendations = db.relationship('Recommendation', backref='assessment', lazy='dynamic')
     scoring_config = db.relationship('ScoringConfiguration')
+    # Use full path string and lambda for primaryjoin to defer evaluation
+    assigned_user = db.relationship(
+        "app.models.user.User",
+        primaryjoin=lambda: Assessment.assigned_user_id == User.id,
+        foreign_keys=[assigned_user_id],
+        lazy='joined' # Keep lazy='joined' or change as needed ('select' is default)
+    )
     
     def __repr__(self):
         return f'<Assessment {self.name}>'
