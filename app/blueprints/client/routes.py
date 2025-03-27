@@ -1,7 +1,6 @@
-from flask import Blueprint, request, jsonify, render_template
+from flask import request, jsonify, render_template
 from app.services.client_service import search_clients
-
-client_bp = Blueprint("client", __name__)
+from . import client_bp # Import the blueprint from __init__.py
 
 
 @client_bp.route("/api/v1/clients/search", methods=["GET"])
