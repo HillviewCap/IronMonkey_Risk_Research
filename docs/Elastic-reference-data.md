@@ -97,6 +97,11 @@ This document outlines the plan for creating a reference guide for developers us
   - `urls` (List[String]): List of URLs found within the content.
   - `emails` (List[String]): List of email addresses found within the content.
   - `last_analyzed` (Date): Timestamp of the last analysis performed.
+  - `critical_infrastructure_sectors` (List[Object]): List of identified critical infrastructure sectors (e.g., `{'sector': 'string', 'confidence': float}`).
+  - `identified_threat_actors` (List[Object]): List of identified threat actors (e.g., `{'name': 'string', 'uuid': 'string', 'confidence': float}`).
+  - `identified_tools` (List[Object]): List of identified tools (e.g., `{'name': 'string', 'uuid': 'string', 'confidence': float}`).
+  - `last_classified` (Date): Timestamp of the last classification performed.
+  - `sentiment_score` (Float): Calculated sentiment score of the content.
 - **Added Fields (by `utils/elastic_indexer.py::index_threat_content`):**
   - `timestamp` (Date): Timestamp added at indexing time (UTC).
 
