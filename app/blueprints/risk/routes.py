@@ -339,7 +339,7 @@ def assessment_new():
         title="New Risk Assessment",  # Pass title for the template
         form=form,  # Pass the form object
         assessment=None,  # Explicitly None for 'new'
-        # clients=clients, # Not needed if choices are set in the form
+        clients=clients,  # Pass clients list for the template loop
         scoring_configs=scoring_configs,  # Pass if needed for a dropdown in the template
         assessment_types=assessment_types,  # Pass if needed for a dropdown in the template
     )
@@ -453,7 +453,7 @@ def assessment_edit(assessment_id):
 @login_required
 def intelligence_feed():
     """Display intelligence feed"""
-    return render_template("risk/intelligence.html")
+    return render_template("intelligence.html")
 
 
 @risk_bp.route("/scenarios")
@@ -462,7 +462,7 @@ def scenario_list():
     """Display list of risk scenarios"""
     # Placeholder for scenario list retrieval
     scenarios = []
-    return render_template("risk/scenarios.html", scenarios=scenarios)
+    return render_template("scenarios.html", scenarios=scenarios)
 
 
 # API Endpoints for Risk Assessment Engine
@@ -519,10 +519,19 @@ def list_assessments_api():
         else:
             query = query.order_by(sort_column.desc())
 
+        logger.debug(
+            f"Assessment query built. Total items before pagination: {query.count()}"
+        )
+
         # Pagination
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        logger.debug(f"Paginating query: page={page}, per_page={per_page}")
+
         assessments = pagination.items
         assessments_data = [assessment.to_dict() for assessment in assessments]
+        logger.debug(
+            f"Pagination result: {len(assessments)} items on page {pagination.page} of {pagination.pages} (Total: {pagination.total})"
+        )
 
         return _make_api_response(
             "success",
@@ -544,6 +553,87 @@ def list_assessments_api():
             error_code="INTERNAL_SERVER_ERROR",
             error_message="An internal error occurred while listing assessments.",
             error_details=e,
+        )
+
+
+@risk_bp.route("/api/v1/risk-assessments", methods=["POST"])
+@login_required
+def create_assessment_api():
+    """
+    Create a new risk assessment via API.
+
+    Expects JSON payload with assessment details.
+    """
+    data = request.get_json()
+    if not data:
+        return _make_api_response(
+            "error", error_code="BAD_REQUEST", error_message="No input data provided"
+        )
+
+    # Basic validation (consider using Marshmallow or WTForms for robust validation)
+    required_fields = ["client_id", "name", "assessment_date", "assessment_type"]
+    missing_fields = [
+        field for field in required_fields if field not in data or not data[field]
+    ]
+    if missing_fields:
+        return _make_api_response(
+            "error",
+            error_code="BAD_REQUEST",
+            error_message=f"Missing required fields: {', '.join(missing_fields)}",
+        )
+
+    try:
+        # Parse assessment date
+        assessment_date = datetime.strptime(data["assessment_date"], "%Y-%m-%d").date()
+
+        # Create new assessment
+        assessment = Assessment(
+            client_id=data["client_id"],
+            name=data["name"],
+            description=data.get("description"),
+            assessment_date=assessment_date,
+            assessment_type=data["assessment_type"],
+            methodology=data.get(
+                "methodology", "Enhanced Framework v2.0"
+            ),  # Default if not provided
+            status=data.get("status", "draft"),  # Default to draft
+            assigned_user_id=current_user.id,  # Assign to current user
+            scoring_config_id=data.get("scoring_config_id"),
+        )
+
+        db.session.add(assessment)
+        db.session.commit()
+        logger.info(f"Assessment {assessment.id} created successfully via API.")
+
+        # Index in Elasticsearch
+        try:
+            RiskSearchService.index_assessment(assessment)
+            logger.info(f"Assessment {assessment.id} indexed successfully.")
+        except Exception as es_err:
+            logger.error(
+                f"Error indexing assessment {assessment.id}: {es_err}", exc_info=True
+            )
+            # Decide if failure to index should prevent success response - currently it doesn't
+
+        # Return success response with the created assessment data (including ID)
+        return _make_api_response("success", data=assessment.to_dict())
+
+    except ValueError as ve:
+        db.session.rollback()
+        logger.error(f"Value error creating assessment: {ve}", exc_info=True)
+        return _make_api_response(
+            "error",
+            error_code="BAD_REQUEST",
+            error_message=f"Invalid data format: {ve}",
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating assessment via API: {e}", exc_info=True)
+        return _make_api_response(
+            "error",
+            error_code="INTERNAL_SERVER_ERROR",
+            error_message="Failed to create assessment.",
+            error_details=str(e),
         )
 
 
