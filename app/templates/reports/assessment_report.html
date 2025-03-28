@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Risk Assessment Report - {{ assessment.id }}</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        color: #333;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #1a202c;
+      }
+      h1 {
+        font-size: 24px;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+      h2 {
+        font-size: 20px;
+        margin-top: 30px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+      }
+      h3 {
+        font-size: 16px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+        font-size: 14px;
+      }
+      th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .meta-item {
+        background-color: #f9f9f9;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+      }
+      .meta-label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        color: #555;
+      }
+      .score-box {
+        text-align: center;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      .overall-score {
+        font-size: 36px;
+        font-weight: bold;
+        color: #c53030; /* Example: Red for high risk */
+      }
+      .score-breakdown {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        font-size: 14px;
+      }
+      .finding-item,
+      .recommendation-item {
+        border: 1px solid #eee;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        background-color: #fff;
+      }
+      .finding-header,
+      .recommendation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .finding-title,
+      .recommendation-title {
+        font-weight: bold;
+        font-size: 15px;
+      }
+      .finding-meta,
+      .recommendation-meta {
+        font-size: 12px;
+        color: #666;
+      }
+      .finding-body,
+      .recommendation-body {
+        margin-top: 10px;
+        font-size: 14px;
+      }
+      .status-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        color: white;
+      }
+      .status-open {
+        background-color: #e53e3e;
+      } /* Red */
+      .status-mitigating {
+        background-color: #dd6b20;
+      } /* Orange */
+      .status-resolved,
+      .status-completed {
+        background-color: #38a169;
+      } /* Green */
+      .status-accepted,
+      .status-rejected {
+        background-color: #718096;
+      } /* Gray */
+      .status-not-started {
+        background-color: #a0aec0;
+      } /* Light Gray */
+      .risk-level-critical {
+        color: #c53030;
+        font-weight: bold;
+      }
+      .risk-level-high {
+        color: #dd6b20;
+        font-weight: bold;
+      }
+      .risk-level-medium {
+        color: #d69e2e;
+      }
+      .risk-level-low {
+        color: #4a5568;
+      }
+      .priority-high {
+        color: #dd6b20;
+        font-weight: bold;
+      }
+      .priority-medium {
+        color: #d69e2e;
+      }
+      .priority-low {
+        color: #4a5568;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Risk Assessment Report</h1>
+    <h2>{{ assessment.name }}</h2>
+
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Assessment ID</span> {{ assessment.id |
+        default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Client</span> {{ assessment.client.name |
+        default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Assessment Type</span> {{
+        assessment.assessment_type | default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Status</span> {{ assessment.status |
+        default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Analyst</span> {{
+        assessment.assigned_user.username | default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Date Created</span> {{
+        assessment.created_at.strftime('%Y-%m-%d') if assessment.created_at else
+        'N/A' }}
+      </div>
+    </div>
+
+    <h2>Overall Risk Score</h2>
+    <div class="score-box">
+      <div class="overall-score">
+        {{ assessment.risk_score | default('N/A') }}
+      </div>
+      <div class="meta-label">Calculated Overall Risk</div>
+    </div>
+
+    <h2>Framework Score Breakdown</h2>
+    <div class="score-breakdown">
+      <div class="meta-item">
+        <span class="meta-label">Conflict Score</span> {{
+        assessment.framework_scores.conflict | default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Cyber Power Score</span> {{
+        assessment.framework_scores.cyber | default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Org Exposure Score</span> {{
+        assessment.framework_scores.exposure | default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Connection Impact</span> {{
+        assessment.framework_scores.connection | default('N/A') }}
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Amplification Factors</span> {{
+        assessment.framework_scores.amplification | default('N/A') }}
+      </div>
+    </div>
+
+    <h2>Findings</h2>
+    {% if assessment.findings %} {% for finding in assessment.findings %}
+    <div class="finding-item">
+      <div class="finding-header">
+        <span class="finding-title"
+          >Finding #{{ finding.id }}: {{ finding.title | default('Untitled
+          Finding') }}</span
+        >
+        <div>
+          <span class="severity-{{ finding.risk_level | lower }}"
+            >{{ finding.risk_level | default('N/A') }} Risk Level</span
+          >
+          <span
+            class="status-badge status-{{ finding.status | lower | replace(' ', '-') }} ml-2"
+            >{{ finding.status | default('N/A') }}</span
+          >
+        </div>
+      </div>
+      <div class="finding-meta">
+        Category: {{ finding.category | default('N/A') }} | Affected Assets: {{
+        finding.affected_assets | default('None Specified') }}
+      </div>
+      <div class="finding-body">
+        <h3>Description</h3>
+        <p>{{ finding.description | default('No description provided.') }}</p>
+        <h3>Impact</h3>
+        <p>{{ finding.impact | default('No impact provided.') }}</p>
+      </div>
+    </div>
+    {% endfor %} {% else %}
+    <p>No findings associated with this assessment.</p>
+    {% endif %}
+
+    <h2>Recommendations</h2>
+    {% if recommendations %} {# Assuming recommendations are passed separately
+    or accessible via findings #} {% for rec in recommendations %}
+    <div class="recommendation-item">
+      <div class="recommendation-header">
+        <span class="recommendation-title">Recommendation #{{ rec.id }}</span>
+        <div>
+          <span class="priority-{{ rec.priority | lower }}"
+            >{{ rec.priority | default('N/A') }} Priority</span
+          >
+          <span
+            class="status-badge status-{{ rec.status | lower | replace(' ', '-') }} ml-2"
+            >{{ rec.status | default('N/A') }}</span
+          >
+        </div>
+      </div>
+      <div class="recommendation-meta">
+        Linked to Finding #{{ rec.finding_id }} | Assigned To: {{
+        rec.assigned_user.username | default('Unassigned') }}
+      </div>
+      <div class="recommendation-body">
+        <p>{{ rec.description | default('No description provided.') }}</p>
+      </div>
+    </div>
+    {% endfor %} {% else %}
+    <p>No recommendations associated with this assessment.</p>
+    {% endif %}
+  </body>
+</html>

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Scenarios{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Risk Scenarios</h1>
+            <p class="text-lg text-gray-600">Define and analyze potential risk scenarios</p>
+        </div>
+        <div>
+            <button class="
+                py-2 px-4
+                bg-blue-600 text-white rounded-md
+                hover:bg-blue-700 focus:outline-none focus:ring-2
+            ">New Scenario</button> <!-- Placeholder for future functionality -->
+        </div>
+    </div>
+
+    <!-- Placeholder Content -->
+    <div class="bg-white p-6 shadow rounded-lg">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Defined Scenarios</h2>
+        <div class="space-y-4">
+            <!-- Example Scenario 1 -->
+            <div class="border p-4 rounded-md flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Scenario: State-Sponsored Ransomware Attack</h3>
+                    <p class="text-sm text-gray-600">Description: A sophisticated ransomware attack targeting critical infrastructure, potentially linked to Nation State X.</p>
+                    <p class="text-xs text-gray-500 mt-1">Tags: Cyber, Ransomware, Critical Infrastructure, State-Sponsored</p>
+                </div>
+                <div>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">High Likelihood</span>
+                    <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Critical Impact</span>
+                    <button class="ml-4 text-sm text-indigo-600 hover:text-indigo-900">View Details</button>
+                </div>
+            </div>
+            <!-- Example Scenario 2 -->
+            <div class="border p-4 rounded-md flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Scenario: Supply Chain Disruption due to Regional Conflict</h3>
+                    <p class="text-sm text-gray-600">Description: Disruption of key component supply lines originating from Region Y due to escalating conflict.</p>
+                    <p class="text-xs text-gray-500 mt-1">Tags: Geopolitical, Supply Chain, Conflict</p>
+                </div>
+                <div>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium Likelihood</span>
+                     <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">High Impact</span>
+                    <button class="ml-4 text-sm text-indigo-600 hover:text-indigo-900">View Details</button>
+                </div>
+            </div>
+            <!-- Add more scenarios or dynamic loading here -->
+            {% if not scenarios %}
+            <p class="text-center text-gray-500 pt-4">No scenarios defined yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+     <!-- Add Filters or Search if needed -->
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold mb-2 text-gray-700">Filter Scenarios</h3>
+        <div class="bg-white p-4 shadow rounded-lg flex space-x-4">
+            <input type="text" placeholder="Keywords or Tags..." class="flex-grow rounded-md border-gray-300 shadow-sm">
+            <select class="rounded-md border-gray-300 shadow-sm">
+                <option>All Likelihoods</option>
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+            </select>
+             <select class="rounded-md border-gray-300 shadow-sm">
+                <option>All Impacts</option>
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+                <option>Critical</option>
+            </select>
+            <button class="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filter</button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

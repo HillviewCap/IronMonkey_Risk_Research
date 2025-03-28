@@ -19,6 +19,8 @@ class Client(db.Model):
     industry = db.Column(db.String(64))
     description = db.Column(db.Text)
     website = db.Column(db.String(128))
+    public_profile_summary = db.Column(db.Text)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -41,6 +43,8 @@ class Client(db.Model):
             "industry": self.industry,
             "description": self.description,
             "website": self.website,
+            "public_profile_summary": self.public_profile_summary,
+
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "locations_count": self.locations.count(),

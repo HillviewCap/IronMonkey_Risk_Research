@@ -1,0 +1,543 @@
+{% extends "base.html" %} {% block title %}Assessment Details{% endblock %} {%
+block content %}
+<div class="container mx-auto px-4 py-8">
+  <!-- Header Section -->
+  <div
+    class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200"
+  >
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">
+        Assessment #{{ assessment.id | default('A-XXX') }}
+      </h1>
+      <p class="text-lg text-gray-600">
+        Client: {{ assessment.client.name | default('Client Name') }}
+      </p>
+      <p class="text-xl font-semibold text-gray-700 mt-1">
+        {{ assessment.name | default('Assessment Name') }}
+      </p>
+    </div>
+    <div>
+      <span
+        class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full {{ 'bg-green-100 text-green-800' if assessment.status == 'Completed' else 'bg-yellow-100 text-yellow-800' }}"
+      >
+        {{ assessment.status | default('Status') }}
+      </span>
+      <!-- Add other action buttons here as needed -->
+      <button
+        class="ml-2 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2"
+      >
+        Edit Assessment
+      </button>
+      <button
+        class="ml-2 py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2"
+      >
+        Calculate Score
+      </button>
+      <button
+        class="ml-2 py-2 px-4 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2"
+      >
+        Generate Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Assessment Metadata -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-4 shadow rounded-lg">
+      <h3 class="text-sm font-medium text-gray-500">Assessment Type</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">
+        {{ assessment.assessment_type | default('Type') }}
+      </p>
+    </div>
+    <div class="bg-white p-4 shadow rounded-lg">
+      <h3 class="text-sm font-medium text-gray-500">Assigned Analyst</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">
+        {{ assessment.assigned_user.username | default('Analyst Name') }}
+      </p>
+    </div>
+    <div class="bg-white p-4 shadow rounded-lg">
+      <h3 class="text-sm font-medium text-gray-500">Created Date</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">
+        {{ assessment.created_at | default('YYYY-MM-DD') }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Framework Score Visualization (Placeholder) -->
+  <div class="mb-8 bg-white p-6 shadow rounded-lg">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">
+      Framework Risk Score
+    </h2>
+    <div class="flex items-center justify-center h-40 bg-gray-100 rounded-md">
+      <p class="text-gray-500">
+        Score Visualization Placeholder (e.g., Gauge Chart, Score Breakdown)
+      </p>
+      <!-- Example Score Display -->
+      <div class="text-center ml-8">
+        <p class="text-4xl font-bold text-red-600">
+          {{ assessment.risk_score | default('N/A') }}
+        </p>
+        <p class="text-sm text-gray-600">Overall Risk</p>
+      </div>
+    </div>
+    <!-- Placeholder for score breakdown -->
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div>
+        <span class="font-medium">Conflict Score:</span> {{
+        assessment.framework_scores.conflict | default('N/A') }}
+      </div>
+      <div>
+        <span class="font-medium">Cyber Power Score:</span> {{
+        assessment.framework_scores.cyber | default('N/A') }}
+      </div>
+      <div>
+        <span class="font-medium">Org Exposure Score:</span> {{
+        assessment.framework_scores.exposure | default('N/A') }}
+      </div>
+      <div>
+        <span class="font-medium">Connection Impact:</span> {{
+        assessment.framework_scores.connection | default('N/A') }}
+      </div>
+      <div>
+        <span class="font-medium">Amplification:</span> {{
+        assessment.framework_scores.amplification | default('N/A') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Findings Section (Placeholder) -->
+  <div class="mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">Findings</h2>
+      <button
+        type="button"
+        @click="$dispatch('open-finding-modal')"
+        class="py-1 px-3 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2"
+      >
+        Add Finding
+      </button>
+    </div>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <ul class="divide-y divide-gray-200">
+        {% for finding in findings %}
+        <li class="px-4 py-4 sm:px-6">
+          <div class="flex items-center justify-between">
+            {# TODO: Add link to finding detail page if it exists #}
+            <p class="text-sm font-medium text-indigo-600 truncate">
+              Finding #{{ finding.id }}: {{ finding.title | default('[No
+              Title]') }}
+            </p>
+            <div class="ml-2 flex-shrink-0 flex">
+              {# Dynamically set severity color based on finding.severity #}
+              <p
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                      {{ 'bg-red-100 text-red-800' if finding.severity == 'High' or finding.severity == 'Critical'
+                                         else 'bg-yellow-100 text-yellow-800' if finding.severity == 'Medium'
+                                         else 'bg-green-100 text-green-800' }}"
+              >
+                {{ finding.severity | default('N/A') }}
+              </p>
+              {# Dynamically set status color based on finding.status #}
+              <p
+                class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                       {{ 'bg-blue-100 text-blue-800' if finding.status == 'Open'
+                                          else 'bg-yellow-100 text-yellow-800' if finding.status == 'Mitigating'
+                                          else 'bg-green-100 text-green-800' if finding.status == 'Resolved'
+                                          else 'bg-gray-100 text-gray-800' }}"
+              >
+                {{ finding.status | default('N/A') }}
+              </p>
+            </div>
+          </div>
+          <div class="mt-2 sm:flex sm:justify-between">
+            <div class="sm:flex">
+              <p class="flex items-center text-sm text-gray-500">
+                Category: {{ finding.framework_category |
+                default('Uncategorized') }}
+              </p>
+            </div>
+            <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+              {# TODO: Add link to finding detail page #}
+              <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-4"
+                >View Details</a
+              >
+              <button
+                type="button"
+                @click="$dispatch('open-recommendation-modal', { findingId: {{ finding.id }} })"
+                class="text-sm font-medium text-green-600 hover:text-green-800"
+              >
+                Add Recommendation
+              </button>
+            </div>
+          </div>
+        </li>
+        {% else %}
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No findings added yet.
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Recommendations Section (Placeholder) -->
+  <div>
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">Recommendations</h2>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <ul class="divide-y divide-gray-200">
+        <!-- Example Recommendation (Loop through recommendations here) -->
+        <li class="px-4 py-4 sm:px-6">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-900 truncate">
+              Rec #R-001: [Recommendation Action]
+            </p>
+            <div class="ml-2 flex-shrink-0 flex">
+              <p
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"
+              >
+                Medium Priority
+              </p>
+              <p
+                class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+              >
+                Not Started
+              </p>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-gray-600">Linked to Finding #F-001</div>
+        </li>
+        <!-- End Example Recommendation -->
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No recommendations added yet.
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Finding Modal -->
+<div
+  x-data="{ open: false }"
+  @open-finding-modal.window="open = true"
+  @close-finding-modal.window="open = false"
+>
+  <div
+    x-show="open"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    x-show="open"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    class="fixed inset-0 z-50 overflow-y-auto"
+  >
+    <div
+      class="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0"
+    >
+      <div
+        class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full"
+      >
+        <form
+          action="{{ url_for('risk.add_finding', assessment_id=assessment.id) }}"
+          method="POST"
+        >
+          {# Adjust URL and method as needed #} {{ form.csrf_token }} {#
+          Assuming WTForms #}
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3
+                  class="text-lg leading-6 font-medium text-gray-900"
+                  id="modal-title"
+                >
+                  Add/Edit Finding
+                </h3>
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label
+                      for="finding-description"
+                      class="block text-sm font-medium text-gray-700"
+                      >Description</label
+                    >
+                    <textarea
+                      id="finding-description"
+                      name="description"
+                      rows="3"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label
+                      for="finding-impact"
+                      class="block text-sm font-medium text-gray-700"
+                      >Impact</label
+                    >
+                    <textarea
+                      id="finding-impact"
+                      name="impact"
+                      rows="2"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label
+                      for="finding-category"
+                      class="block text-sm font-medium text-gray-700"
+                      >Framework Category</label
+                    >
+                    <select
+                      id="finding-category"
+                      name="category"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    >
+                      <option value="">Select Category...</option>
+                      <option value="Geopolitical Conflict">
+                        Geopolitical Conflict
+                      </option>
+                      <option value="Cyber Actor Type">Cyber Actor Type</option>
+                      <option value="Org Exposure Type">
+                        Org Exposure Type
+                      </option>
+                      <option value="Destruction">
+                        Attack Type: Destruction
+                      </option>
+                      <option value="Disruption">
+                        Attack Type: Disruption
+                      </option>
+                      <option value="Intelligence">
+                        Attack Type: Intelligence
+                      </option>
+                      <option value="Influence">Attack Type: Influence</option>
+                      {# Add more specific categories if needed #}
+                    </select>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="finding-severity"
+                        class="block text-sm font-medium text-gray-700"
+                        >Severity</label
+                      >
+                      <select
+                        id="finding-severity"
+                        name="severity"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        for="finding-status"
+                        class="block text-sm font-medium text-gray-700"
+                        >Status</label
+                      >
+                      <select
+                        id="finding-status"
+                        name="status"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      >
+                        <option value="Open">Open</option>
+                        <option value="Mitigating">Mitigating</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Accepted">Accepted</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      for="finding-assets"
+                      class="block text-sm font-medium text-gray-700"
+                      >Affected Assets (Optional)</label
+                    >
+                    <input
+                      type="text"
+                      id="finding-assets"
+                      name="affected_assets"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      placeholder="e.g., Server-01, Customer Database"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="submit"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Save Finding
+            </button>
+            <button
+              type="button"
+              @click="open = false"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recommendation Modal -->
+<div
+  x-data="{ open: false, findingId: null }"
+  @open-recommendation-modal.window="open = true; findingId = $event.detail.findingId"
+  @close-recommendation-modal.window="open = false; findingId = null"
+>
+  <div
+    x-show="open"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    x-show="open"
+    x-transition:enter="ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave="ease-in duration-200"
+    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    class="fixed inset-0 z-50 overflow-y-auto"
+  >
+    <div
+      class="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0"
+    >
+      <div
+        class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full"
+      >
+        <form
+          x-bind:action="'/api/v1/findings/' + findingId + '/recommendations'"
+          method="POST"
+        >
+          {# Adjust URL/method as needed - this assumes API endpoint #} {{
+          form.csrf_token }} {# Assuming WTForms - might need different handling
+          for API #}
+          <input type="hidden" name="finding_id" x-bind:value="findingId" />
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3
+                  class="text-lg leading-6 font-medium text-gray-900"
+                  id="rec-modal-title"
+                >
+                  Add/Edit Recommendation (for Finding #<span
+                    x-text="findingId"
+                  ></span
+                  >)
+                </h3>
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label
+                      for="rec-description"
+                      class="block text-sm font-medium text-gray-700"
+                      >Recommended Action</label
+                    >
+                    <textarea
+                      id="rec-description"
+                      name="description"
+                      rows="3"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    ></textarea>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="rec-priority"
+                        class="block text-sm font-medium text-gray-700"
+                        >Priority</label
+                      >
+                      <select
+                        id="rec-priority"
+                        name="priority"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        for="rec-status"
+                        class="block text-sm font-medium text-gray-700"
+                        >Status</label
+                      >
+                      <select
+                        id="rec-status"
+                        name="status"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      >
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      for="rec-assigned"
+                      class="block text-sm font-medium text-gray-700"
+                      >Assigned To (Optional)</label
+                    >
+                    <input
+                      type="text"
+                      id="rec-assigned"
+                      name="assigned_user_id"
+                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      placeholder="User ID or Name"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="submit"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Save Recommendation
+            </button>
+            <button
+              type="button"
+              @click="open = false"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

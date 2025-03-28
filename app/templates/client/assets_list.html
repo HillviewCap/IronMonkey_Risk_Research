@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asset Listing</title>
+  </head>
+  <body>
+    <h1>Asset Listing</h1>
+    <div id="assets">
+      <!-- Assets will be loaded here -->
+    </div>
+    <script>
+      fetch("/assets")
+        .then((response) => response.json())
+        .then((data) => {
+          const assetsDiv = document.getElementById("assets");
+          data.assets.forEach((asset) => {
+            const div = document.createElement("div");
+            div.innerHTML = `<h2>${asset.name}</h2><p>Type: ${asset.asset_type}</p><p>Criticality Score: ${asset.criticality_score}</p>`;
+            assetsDiv.appendChild(div);
+          });
+        })
+        .catch((error) => console.error("Error fetching assets:", error));
+    </script>
+  </body>
+</html>
