@@ -1,9 +1,10 @@
-from flask import request, jsonify, render_template, redirect, url_for, flash, abort
+from flask import request, jsonify, render_template, redirect, url_for, flash, abort, current_app
 from flask_login import login_required
-from app.services.client_service import search_clients, create_client_with_details, get_client_by_id # Added get_client_by_id
+from app.services.client_service import search_clients, create_client_with_details, get_client_by_id
 from .forms import ClientOnboardingForm
 from . import client_bp
-from app.models.client import Client # Import Client model for type hinting if needed, or rely on service
+# Removed Client import as it's not directly used here
+from app.models.framework import IndustryProfile # Import IndustryProfile
 
 
 @client_bp.route("/api/v1/clients/search", methods=["GET"])
@@ -34,6 +35,22 @@ def search_page():
 def onboard_client():
     """Handle client onboarding form display and submission."""
     form = ClientOnboardingForm()
+
+    # Populate dynamic choices
+    try:
+        # Query industries and format for SelectField: (value, label)
+        industries = IndustryProfile.query.order_by(IndustryProfile.category, IndustryProfile.industry).all()
+        form.industry.choices = [("", "-- Select Industry --")] + [
+            (ind.industry, f"{ind.category}: {ind.industry}") for ind in industries
+        ]
+    except Exception as e:
+        # Log the error and provide a fallback choice
+        current_app.logger.error(f"Failed to load industries for onboarding form: {e}", exc_info=True)
+        form.industry.choices = [("", "Error loading industries")]
+
+    # Load countries from config
+    form.location_country.choices = current_app.config.get('COUNTRIES', [("", "Error loading countries")])
+
     if form.validate_on_submit():
         # Extract data from the form
         form_data = form.data
