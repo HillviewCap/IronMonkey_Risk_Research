@@ -80,28 +80,54 @@ block content %}
         <p class="text-sm text-gray-600">Overall Risk</p>
       </div>
     </div>
-    <!-- Placeholder for score breakdown -->
+    <!-- Score Breakdown -->
     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-      <div>
-        <span class="font-medium">Conflict Score:</span> {{
-        assessment.framework_scores.conflict | default('N/A') }}
-      </div>
-      <div>
-        <span class="font-medium">Cyber Power Score:</span> {{
-        assessment.framework_scores.cyber | default('N/A') }}
-      </div>
-      <div>
-        <span class="font-medium">Org Exposure Score:</span> {{
-        assessment.framework_scores.exposure | default('N/A') }}
-      </div>
-      <div>
-        <span class="font-medium">Connection Impact:</span> {{
-        assessment.framework_scores.connection | default('N/A') }}
-      </div>
-      <div>
-        <span class="font-medium">Amplification:</span> {{
-        assessment.framework_scores.amplification | default('N/A') }}
-      </div>
+      {% if assessment.framework_scores and assessment.framework_scores.type == 'Basic' %}
+        {# Display Basic Assessment Details #}
+        <div>
+          <span class="font-medium">Baseline Risk (Industry):</span> {{ assessment.framework_scores.baseline_risk | round(1) | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Geographic Contribution:</span> {{ assessment.framework_scores.geo_contribution | round(1) | default('N/A') }}
+          <span class="text-xs text-gray-500">(Factor: {{ assessment.framework_scores.geo_risk_factor | round(1) | default('N/A') }})</span>
+        </div>
+        <div>
+          <span class="font-medium">Vulnerability Contribution:</span> {{ assessment.framework_scores.vuln_contribution | round(1) | default('N/A') }}
+          <span class="text-xs text-gray-500">(Score Comp: {{ assessment.framework_scores.vulnerability_score_component | round(1) | default('N/A') }})</span>
+        </div>
+        <div>
+          <span class="font-medium">Primary Assets Checked:</span> {{ assessment.framework_scores.primary_assets_checked | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Total Vulns Found (Med+):</span> {{ assessment.framework_scores.total_vulnerabilities_found | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Crit/High Vulns Found:</span> {{ assessment.framework_scores.critical_high_vulnerabilities_found | default('N/A') }}
+        </div>
+      {% elif assessment.framework_scores and assessment.framework_scores.type == 'Full Framework' %}
+        {# Display Full Framework Details #}
+        <div>
+          <span class="font-medium">Conflict Score:</span> {{ assessment.framework_scores.conflict_score | round(1) | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Cyber Power Score:</span> {{ assessment.framework_scores.cyber_score | round(1) | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Org Exposure Score:</span> {{ assessment.framework_scores.org_exposure_score | round(1) | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Baseline Risk:</span> {{ assessment.framework_scores.baseline_risk | round(1) | default('N/A') }}
+        </div>
+        <div>
+          <span class="font-medium">Amplification Factor:</span> {{ assessment.framework_scores.amplification_factor | round(1) | default('N/A') }}
+        </div>
+         <div>
+          <span class="font-medium">Weighted Score:</span> {{ assessment.framework_scores.weighted_score | round(1) | default('N/A') }}
+        </div>
+      {% else %}
+        {# Fallback if framework_scores is missing or type is unknown #}
+        <div class="col-span-3 text-gray-500">Score breakdown not available.</div>
+      {% endif %}
     </div>
   </div>
 

@@ -17,7 +17,7 @@ class Assessment(db.Model):
     assessment_date = db.Column(db.Date, nullable=False)
     description = db.Column(db.Text)
     methodology = db.Column(db.String(64), default='Enhanced Framework v2.0')
-    assessment_type = db.Column(db.String(64))  # Full Framework, Targeted Conflict, Ad-hoc
+    assessment_type = db.Column(db.String(64))  # Basic, Full Framework, Targeted Conflict, Ad-hoc
     status = db.Column(db.String(32), default='draft')  # draft, in_progress, review, complete
     assigned_user_id = db.Column(db.Integer)  # Reference to users.users_accounts.id
     risk_score = db.Column(db.Float)

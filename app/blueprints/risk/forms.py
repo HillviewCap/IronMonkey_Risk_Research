@@ -25,12 +25,11 @@ class AssessmentForm(FlaskForm):
     assessment_type = SelectField(
         "Assessment Type",
         choices=[
-            ("Internal", "Internal"),
-            ("External", "External"),
-            ("Compliance", "Compliance"),
-            ("Vulnerability", "Vulnerability Scan"),
-            ("Penetration", "Penetration Test"),
+            ("Basic", "Basic Assessment"),
+            ("Full Framework", "Full Framework Assessment"),
             ("Targeted Conflict", "Targeted Conflict Simulation"),
+            ("Ad-hoc", "Ad-hoc Assessment"),
+            # Keep 'Other' or remove if not needed
             ("Other", "Other"),
         ],
         validators=[DataRequired()],
