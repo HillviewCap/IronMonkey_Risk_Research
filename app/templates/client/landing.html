@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Clients{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Clients</h1>
+        <a href="{{ url_for('client.onboard_client') }}"
+           class="
+             inline-block             <!-- Layout -->
+             text-sm font-medium      <!-- Typography -->
+             py-2 px-4                <!-- Spacing -->
+             bg-blue-600 text-white rounded-md <!-- Appearance -->
+             hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 <!-- States -->
+           ">
+            Onboard New Client
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <form method="GET" action="{{ url_for('client.client_landing') }}" class="mb-8 p-6 bg-white shadow rounded-md">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label for="query" class="block text-sm font-medium text-gray-700">Search Clients</label>
+                <input type="text" name="query" id="query" value="{{ search_query | default('', true) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Name, description...">
+            </div>
+            <div>
+                <label for="industry" class="block text-sm font-medium text-gray-700">Industry</label>
+                <select name="industry" id="industry" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    {% for value, label in industry_choices %}
+                        <option value="{{ value }}" {% if value == search_industry %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
+                <select name="country" id="country" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    {% for value, label in country_choices %}
+                        <option value="{{ value }}" {% if value == search_country %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <button type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Search
+                </button>
+                <a href="{{ url_for('client.client_landing') }}" 
+                   class="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Clear
+                </a>
+            </div>
+        </div>
+    </form>
+
+
+    {% if clients %}
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul role="list" class="divide-y divide-gray-200">
+            {% for client in clients %}
+            <li>
+                <a href="{{ url_for('client.client_detail', client_id=client.id) }}" class="block hover:bg-gray-50">
+                    <div class="px-4 py-4 sm:px-6">
+                        <div class="flex items-center justify-between">
+                            <p class="text-lg font-medium text-indigo-600 truncate">{{ client.name }}</p>
+                            <!-- Optional: Add more details like industry -->
+                            {% if client.industry %}
+                            <div class="ml-2 flex-shrink-0 flex">
+                                <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    {{ client.industry }}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <!-- Optional: Add more details like description or location -->
+                        {% if client.description %}
+                        <div class="mt-2 sm:flex sm:justify-between">
+                            <div class="sm:flex">
+                                <p class="flex items-center text-sm text-gray-500">
+                                    {{ client.description | truncate(100) }}
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+        <p class="text-lg text-gray-600">No clients found.</p>
+        <p class="mt-2 text-sm text-gray-500">You can start by onboarding a new client.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

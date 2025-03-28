@@ -53,44 +53,145 @@
             </div>
             {% endif %}
 
+            {% if client.competitors %}
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Competitors</h3>
+                {# Display as a simple list if it's a list, otherwise raw #}
+                {% if client.competitors is iterable and client.competitors is not string %}
+                    <ul class="list-disc list-inside mt-1 text-base text-gray-700">
+                    {% for competitor in client.competitors %}
+                        <li>{{ competitor }}</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                     <p class="mt-1 text-base text-gray-700 whitespace-pre-wrap">{{ client.competitors | tojson(indent=2) }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
             <div>
                 <h3 class="text-sm font-medium text-gray-500">Created On</h3>
                 <p class="mt-1 text-base text-gray-900">{{ client.created_at.strftime('%Y-%m-%d %H:%M:%S') if client.created_at else 'N/A' }} UTC</p>
             </div>
-            
+
             <div>
                 <h3 class="text-sm font-medium text-gray-500">Last Updated</h3>
                 <p class="mt-1 text-base text-gray-900">{{ client.updated_at.strftime('%Y-%m-%d %H:%M:%S') if client.updated_at else 'N/A' }} UTC</p>
             </div>
 
-            {# Placeholder for related data (Contacts, Locations, Assets, Assessments) #}
-            {# You would typically query and display these here #}
-            <div class="pt-4 border-t border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-700 mb-2">Related Information</h2>
-                <p class="text-gray-500">Contacts, Locations, Assets, and Assessments would be displayed here.</p>
-                {# Example: Loop through contacts #}
-                {# 
-                <h3 class="text-lg font-medium text-gray-600 mt-4">Contacts</h3>
-                <ul>
-                    {% for contact in client.contacts %}
-                        <li>{{ contact.first_name }} {{ contact.last_name }} ({{ contact.email }})</li>
+            {# --- Related Information Sections --- #}
+            <div class="pt-4 border-t border-gray-200 space-y-6">
+
+                {# --- Locations --- #}
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-700">Locations</h2>
+                        <a href="{{ url_for('client.add_location', client_id=client.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Add Location
+                        </a>
+                    </div>
+                    {% if locations %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for location in locations %}
+                        <li class="py-3 flex justify-between items-center">
+                            <div>
+                                <p class="text-md font-medium text-gray-900">{{ location.name }} <span class="text-sm text-gray-500">({{ location.location_type | default('N/A') }})</span></p>
+                                <p class="text-sm text-gray-600">{{ [location.address, location.city, location.state, location.country] | select('ne', none) | join(', ') }}</p>
+                                {% if location.latitude and location.longitude %}
+                                <p class="text-xs text-gray-500">Lat: {{ location.latitude }}, Lon: {{ location.longitude }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="{{ url_for('client.edit_location', client_id=client.id, location_id=location.id) }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</a>
+                                <form method="POST" action="{{ url_for('client.delete_location', client_id=client.id, location_id=location.id) }}" onsubmit="return confirm('Are you sure you want to delete this location?');" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
                     {% else %}
-                        <li>No contacts found.</li>
-                    {% endfor %}
-                </ul> 
-                #}
+                    <p class="text-gray-500 text-sm">No locations added yet.</p>
+                    {% endif %}
+                </div>
+
+                {# --- Contacts --- #}
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-700">Contacts</h2>
+                        <a href="{{ url_for('client.add_contact', client_id=client.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Add Contact
+                        </a>
+                    </div>
+                    {% if contacts %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for contact in contacts %}
+                        <li class="py-3 flex justify-between items-center">
+                            <div>
+                                <p class="text-md font-medium text-gray-900">{{ contact.first_name }} {{ contact.last_name }} {% if contact.is_primary %}<span class="text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">Primary</span>{% endif %}</p>
+                                <p class="text-sm text-gray-600">{{ contact.position | default('N/A') }}</p>
+                                <p class="text-sm text-gray-600">{{ contact.email | default('') }} {{ '| ' if contact.email and contact.phone }}{{ contact.phone | default('') }}</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="{{ url_for('client.edit_contact', client_id=client.id, contact_id=contact.id) }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</a>
+                                <form method="POST" action="{{ url_for('client.delete_contact', client_id=client.id, contact_id=contact.id) }}" onsubmit="return confirm('Are you sure you want to delete this contact?');" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-gray-500 text-sm">No contacts added yet.</p>
+                    {% endif %}
+                </div>
+
+                {# --- Assets --- #}
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-700">Assets</h2>
+                        <a href="{{ url_for('client.add_asset', client_id=client.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Add Asset
+                        </a>
+                    </div>
+                    {% if assets %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for asset in assets %}
+                        <li class="py-3 flex justify-between items-center">
+                            <div>
+                                <p class="text-md font-medium text-gray-900">{{ asset.name }}</p>
+                                <p class="text-sm text-gray-600">Type: {{ asset.asset_type | capitalize }} | Criticality: {{ asset.criticality_score | default('N/A') }}</p>
+                                {% if asset.location %}
+                                <p class="text-sm text-gray-500">Location: {{ asset.location.name }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="flex space-x-2">
+                                {# Link to the potentially non-existent asset detail page - adjust if needed #}
+                                <a href="{{ url_for('client.asset_detail_placeholder', asset_id=asset.id) }}" class="text-gray-600 hover:text-gray-900 text-sm font-medium">Details</a>
+                                <a href="{{ url_for('client.edit_asset', client_id=client.id, asset_id=asset.id) }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</a>
+                                <form method="POST" action="{{ url_for('client.delete_asset', client_id=client.id, asset_id=asset.id) }}" onsubmit="return confirm('Are you sure you want to delete this asset?');" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-gray-500 text-sm">No assets added yet.</p>
+                    {% endif %}
+                </div>
+
             </div>
 
         </div>
-        
+
         <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-            {# Add buttons for actions like Edit, Delete, Add Assessment etc. #}
-            <a href="{{ url_for('client.search_page') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Back to Search
+            <a href="{{ url_for('client.client_landing') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to Clients
             </a>
-            {# <a href="#" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Edit Client
-            </a> #}
+            <a href="{{ url_for('client.edit_client', client_id=client.id) }}" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Edit Client Details
+            </a>
         </div>
     </div>
 </div>
