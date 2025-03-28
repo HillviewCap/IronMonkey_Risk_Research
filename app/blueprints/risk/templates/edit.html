@@ -14,119 +14,93 @@ content %}
   <div
     class="bg-white shadow overflow-hidden sm:rounded-lg p-6"
     x-data="{
-             formData: {
-                 client_id: '{{ assessment.client_id if assessment else '' }}',
-                 name: '{{ assessment.name | e if assessment else '' }}', // Use 'e' filter for safety
-                 assessment_date: '{{ assessment.assessment_date.strftime('%Y-%m-%d') if assessment and assessment.assessment_date else '' }}',
-                 assessment_type: '{{ assessment.assessment_type if assessment else '' }}',
-                 status: '{{ assessment.status if assessment else 'draft' }}', // Default to draft for new
-                 scoring_config_id: '{{ assessment.scoring_config_id if assessment and assessment.scoring_config_id is not none else '' }}',
-                 description: '{{ assessment.description | e if assessment else '' }}' // Use 'e' filter for safety
-             },
-             isEditMode: {{ 'true' if assessment else 'false' }},
-             assessmentId: {{ assessment.id | tojson if assessment else 'null' }},
-
-             // --- Moved Functions ---
-             getCsrfToken() {
-                 const csrfMeta = document.querySelector('meta[name=\"csrf-token\"]');
-                 return csrfMeta ? csrfMeta.getAttribute(\"content\") : \"{{ csrf_token() }}\"; // Fallback to Jinja render
-             },
-
-             async handleApiResponse(response, successMessage, errorMessagePrefix) {
-                 const data = await response.json();
-                 if (response.ok && data.status === \"success\") {
-                     alert(successMessage);
-                     return data.data || true; // Return data payload or true if no data
-                 } else {
-                     const message = data.error?.message || \"An unknown error occurred.\";
-                     alert(`${errorMessagePrefix}: ${message}`);
-                     console.error(\"API Error:\", data.error || data);
-                     return false; // Indicate failure
-                 }
-             },
-
-             submitAssessmentForm() {
-                 const formData = this.formData;
-
-                 // Determine URL and Method based on mode
-                 let url;
-                 let method;
-                 let successMessage;
-                 let errorMessagePrefix;
-                 let redirectUrl;
-
-                 if (this.isEditMode) {
-                     const assessmentId = this.assessmentId;
-                     if (!assessmentId) {
-                         alert(\"Error: Assessment ID missing for update.\");
-                         return;
-                     }
-                     url = `/api/v1/risk-assessments/${assessmentId}`;
-                     method = \"PUT\";
-                     successMessage = \"Assessment updated successfully!\";
-                     errorMessagePrefix = \"Error updating assessment\";
-                     redirectUrl = `/risk/assessments/${assessmentId}`;
-                 } else {
-                     url = `/api/v1/risk-assessments`;
-                     method = \"POST\";
-                     successMessage = \"Assessment created successfully!\";
-                     errorMessagePrefix = \"Error creating assessment\";
-                     // Redirect to detail page on successful creation
-                     // redirectUrl = \"/risk/assessments\"; // Old: redirect to list
-                 }
-
-                 // Basic validation
-                 if (
-                     !formData.client_id?.trim() ||
-                     !formData.name?.trim() ||
-                     !formData.assessment_date?.trim()
-                 ) {
-                     alert(
-                         \"Please fill in all required fields (Client, Name, Assessment Date).\"
-                     );
-                     return;
-                 }
-
-                 fetch(url, {
-                     method: method,
-                     headers: {
-                         \"Content-Type\": \"application/json\",
-                         \"X-CSRFToken\": this.getCsrfToken(), // Use this.getCsrfToken()
-                     },
-                     body: JSON.stringify(formData),
-                 })
-                 .then((response) =>
-                     this.handleApiResponse(response, successMessage, errorMessagePrefix) // Use this.handleApiResponse()
-                 )
-                 .then((result) => {
-                     if (result) {
-                         // On success, redirect to the detail page using the returned ID
-                         if (typeof result === \"object\" && result.id) {
-                             window.location.href = `/risk/assessments/${result.id}`;
-                         } else if (!this.isEditMode) {
-                             // Fallback for creation if ID wasn't returned (shouldn't happen with current API)
-                             console.warn('Assessment created, but no ID returned in response. Redirecting to list.');
-                             window.location.href = '/risk/assessments';
-                         } else if (this.isEditMode) {
-                             // If update was successful but no specific data returned, stay or reload
-                             window.location.href = redirectUrl; // Redirect to detail page after update
-                         }
-                     }
-                     // If not success, form stays open for correction
-                 })
-                 .catch((error) => {
-                     console.error(\"Fetch Error:\", error);
-                     alert(
-                         `A network error occurred while ${
-                             this.isEditMode ? \"updating\" : \"creating\"
-                         } the assessment.`
-                     );
-                 });
-             }
-             // --- End Moved Functions ---
-         }"
-  >
-    <form @submit.prevent="submitAssessmentForm">
+      formData: {
+        client_id: '{{ assessment.client_id if assessment else '' }}',
+        name: '{{ assessment.name | e if assessment else '' }}',
+        assessment_date: '{{ assessment.assessment_date.strftime('%Y-%m-%d') if assessment and assessment.assessment_date else '' }}',
+        assessment_type: '{{ assessment.assessment_type if assessment else '' }}',
+        status: '{{ assessment.status if assessment else 'draft' }}',
+        scoring_config_id: '{{ assessment.scoring_config_id if assessment and assessment.scoring_config_id is not none else '' }}',
+        description: '{{ assessment.description | e if assessment else '' }}'
+      },
+      isEditMode: {{ 'true' if assessment else 'false' }},
+      assessmentId: {{ assessment.id | tojson if assessment else 'null' }},
+      getCsrfToken() {
+        const csrfMeta = document.querySelector('meta[name=\"csrf-token\"]');
+        return csrfMeta ? csrfMeta.getAttribute(\"content\") : \"{{ csrf_token() }}\";
+      },
+      async handleApiResponse(response, successMessage, errorMessagePrefix) {
+        const data = await response.json();
+        if (response.ok && data.status === \"success\") {
+          alert(successMessage);
+          return data.data || true;
+        } else {
+          const message = data.error?.message || \"An unknown error occurred.\";
+          alert(`${errorMessagePrefix}: ${message}`);
+          console.error(\"API Error:\", data.error || data);
+          return false;
+        }
+      },
+      submitAssessmentForm() {
+        const formData = this.formData;
+        
+        let url;
+        let method;
+        let successMessage;
+        let errorMessagePrefix;
+        let redirectUrl;
+        
+        if (this.isEditMode) {
+          const assessmentId = this.assessmentId;
+          if (!assessmentId) {
+            alert(\"Error: Assessment ID missing for update.\");
+            return;
+          }
+          url = `/api/v1/risk-assessments/${assessmentId}`;
+          method = \"PUT\";
+          successMessage = \"Assessment updated successfully!\";
+          errorMessagePrefix = \"Error updating assessment\";
+          redirectUrl = `/risk/assessments/${assessmentId}`;
+        } else {
+          url = `/api/v1/risk-assessments`;
+          method = \"POST\";
+          successMessage = \"Assessment created successfully!\";
+          errorMessagePrefix = \"Error creating assessment\";
+        }
+        
+        if (!formData.client_id?.trim() || !formData.name?.trim() || !formData.assessment_date?.trim()) {
+          alert(\"Please fill in all required fields (Client, Name, Assessment Date).\");
+          return;
+        }
+        
+        fetch(url, {
+          method: method,
+          headers: {
+            \"Content-Type\": \"application/json\",
+            \"X-CSRFToken\": this.getCsrfToken(),
+          },
+          body: JSON.stringify(formData),
+        })
+        .then((response) => this.handleApiResponse(response, successMessage, errorMessagePrefix))
+        .then((result) => {
+          if (result) {
+            if (typeof result === \"object\" && result.id) {
+              window.location.href = `/risk/assessments/${result.id}`;
+            } else if (!this.isEditMode) {
+              console.warn('Assessment created, but no ID returned in response. Redirecting to list.');
+              window.location.href = '/risk/assessments';
+            } else if (this.isEditMode) {
+              window.location.href = redirectUrl;
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(\"Fetch Error:\", error);
+          alert(`A network error occurred while ${this.isEditMode ? \"updating\" : \"creating\"} the assessment.`);
+        });
+      }
+    }">
+    <form @submit.prevent="submitAssessmentForm" method="POST" action="javascript:void(0);">
       {# CSRF token will be sent via JS header, hidden input removed #} {% with
       messages = get_flashed_messages(with_categories=true) %} {% if messages %}
       {% for category, message in messages %}
@@ -209,7 +183,7 @@ content %}
           </select>
         </div>
 
-        <div x-show="isEditMode">
+        <div>
           <label for="status" class="block text-sm font-medium text-gray-700"
             >Status</label
           >
@@ -271,6 +245,7 @@ content %}
         </a>
         <button
           type="submit"
+          @click.prevent="submitAssessmentForm"
           class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           {% if assessment %}Update Assessment{% else %}Create Assessment{%

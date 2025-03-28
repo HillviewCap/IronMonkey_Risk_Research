@@ -180,7 +180,7 @@ def assessment_list():
     assessments_data = [a.to_dict() for a in assessments]
 
     return render_template(
-        "risk/list.html",
+        "list.html",
         assessments=assessments_data,
         clients=clients,
         assessment_types=assessment_types,
@@ -272,7 +272,7 @@ def assessment_new():
             # Pass assessment_types if needed by template directly
             assessment_types = ["Full Framework", "Targeted Conflict", "Ad-hoc"]
             return render_template(
-                "risk/edit.html",
+                "edit.html",
                 title="New Risk Assessment",  # Keep title consistent
                 form=form,  # Pass the form with errors
                 assessment=None,
@@ -334,15 +334,21 @@ def assessment_new():
         "Ad-hoc",
     ]  # Or get from config/model
 
-    return render_template(
-        "risk/edit.html",
-        title="New Risk Assessment",  # Pass title for the template
-        form=form,  # Pass the form object
-        assessment=None,  # Explicitly None for 'new'
-        clients=clients,  # Pass clients list for the template loop
-        scoring_configs=scoring_configs,  # Pass if needed for a dropdown in the template
-        assessment_types=assessment_types,  # Pass if needed for a dropdown in the template
-    )
+    context = {
+        "title": "New Risk Assessment",
+        "form": form,
+        "assessment": None,
+        "clients": clients,
+        "scoring_configs": scoring_configs,
+        "assessment_types": assessment_types,
+        "statuses": ["draft", "in_progress", "review", "complete"],
+    }
+    logger.debug(
+        f"Rendering edit.html for new assessment with context keys: {list(context.keys())}"
+    )  # Log context keys
+    # logger.debug(f"Rendering edit.html for new assessment with full context: {context}") # Optional: Log full context if needed, might be large
+
+    return render_template("edit.html", **context)
 
 
 @risk_bp.route("/assessments/<int:assessment_id>/edit", methods=["GET", "POST"])
@@ -379,7 +385,7 @@ def assessment_edit(assessment_id):
             assessment_types = ["Full Framework", "Targeted Conflict", "Ad-hoc"]
             statuses = ["draft", "in_progress", "review", "complete"]
             return render_template(
-                "risk/edit.html",
+                "edit.html",
                 title=f"Edit Risk Assessment #{assessment.id}",  # Keep title consistent
                 form=form,  # Pass the form with errors
                 assessment=assessment,  # Pass original assessment for context if needed
@@ -438,7 +444,7 @@ def assessment_edit(assessment_id):
     statuses = ["draft", "in_progress", "review", "complete"]
 
     return render_template(
-        "risk/edit.html",
+        "edit.html",
         title=f"Edit Risk Assessment #{assessment.id}",  # Pass title
         form=form,  # Pass the form object
         assessment=assessment,  # Pass assessment for context if needed
