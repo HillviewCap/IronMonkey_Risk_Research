@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    
+    {# Display flashed messages if redirected here after creation #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="p-4 mb-4 text-sm rounded-lg 
+                    {% if category == 'danger' %} bg-red-100 text-red-700 
+                    {% elif category == 'success' %} bg-green-100 text-green-700 
+                    {% else %} bg-blue-100 text-blue-700 {% endif %}" 
+                    role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-gray-800">{{ client.name }}</h1>
+            <p class="text-sm text-gray-600">Client ID: {{ client.id }}</p>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Industry</h3>
+                <p class="mt-1 text-lg text-gray-900">{{ client.industry | default('N/A') }}</p>
+            </div>
+            
+            {% if client.website %}
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Website</h3>
+                <p class="mt-1 text-lg text-gray-900"><a href="{{ client.website }}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-800">{{ client.website }}</a></p>
+            </div>
+            {% endif %}
+
+            {% if client.description %}
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Description</h3>
+                <p class="mt-1 text-base text-gray-700 whitespace-pre-wrap">{{ client.description }}</p>
+            </div>
+            {% endif %}
+
+            {% if client.public_profile_summary %}
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Public Profile Summary</h3>
+                <p class="mt-1 text-base text-gray-700 whitespace-pre-wrap">{{ client.public_profile_summary }}</p>
+            </div>
+            {% endif %}
+
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Created On</h3>
+                <p class="mt-1 text-base text-gray-900">{{ client.created_at.strftime('%Y-%m-%d %H:%M:%S') if client.created_at else 'N/A' }} UTC</p>
+            </div>
+            
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Last Updated</h3>
+                <p class="mt-1 text-base text-gray-900">{{ client.updated_at.strftime('%Y-%m-%d %H:%M:%S') if client.updated_at else 'N/A' }} UTC</p>
+            </div>
+
+            {# Placeholder for related data (Contacts, Locations, Assets, Assessments) #}
+            {# You would typically query and display these here #}
+            <div class="pt-4 border-t border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Related Information</h2>
+                <p class="text-gray-500">Contacts, Locations, Assets, and Assessments would be displayed here.</p>
+                {# Example: Loop through contacts #}
+                {# 
+                <h3 class="text-lg font-medium text-gray-600 mt-4">Contacts</h3>
+                <ul>
+                    {% for contact in client.contacts %}
+                        <li>{{ contact.first_name }} {{ contact.last_name }} ({{ contact.email }})</li>
+                    {% else %}
+                        <li>No contacts found.</li>
+                    {% endfor %}
+                </ul> 
+                #}
+            </div>
+
+        </div>
+        
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            {# Add buttons for actions like Edit, Delete, Add Assessment etc. #}
+            <a href="{{ url_for('client.search_page') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to Search
+            </a>
+            {# <a href="#" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Edit Client
+            </a> #}
+        </div>
+    </div>
+</div>
+{% endblock %}

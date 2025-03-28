@@ -1,12 +1,9 @@
-from flask import request, jsonify, render_template, redirect, url_for, flash
-
-from flask import request, jsonify, render_template
+from flask import request, jsonify, render_template, redirect, url_for, flash, abort
 from flask_login import login_required
-from app.services.client_service import search_clients, create_client_with_details # Added create_client_with_details
-from .forms import ClientOnboardingForm # Added form import
-
-from app.services.client_service import search_clients
-from . import client_bp  # Import the blueprint from __init__.py
+from app.services.client_service import search_clients, create_client_with_details, get_client_by_id # Added get_client_by_id
+from .forms import ClientOnboardingForm
+from . import client_bp
+from app.models.client import Client # Import Client model for type hinting if needed, or rely on service
 
 
 @client_bp.route("/api/v1/clients/search", methods=["GET"])
@@ -44,12 +41,26 @@ def onboard_client():
         new_client = create_client_with_details(form_data)
         if new_client:
             flash(f'Client "{new_client.name}" onboarded successfully!', 'success')
-            # Redirect to a client detail page (assuming it exists or will be created)
-            # For now, let's redirect to a placeholder or the search page
-            # Replace 'client.search_page' with 'client.client_detail' and add client_id=new_client.id when ready
-            return redirect(url_for('client.search_page'))
+            # Redirect to the new client's detail page
+            return redirect(url_for('client.client_detail', client_id=new_client.id))
         else:
             flash('Error onboarding client. Please check the logs or try again.', 'danger')
 
     # For GET request or if form validation fails
     return render_template('client/onboard_client.html', title='Onboard New Client', form=form)
+
+
+
+@client_bp.route('/clients/<int:client_id>')
+@login_required
+def client_detail(client_id):
+    """Display the details for a specific client."""
+    client = get_client_by_id(client_id)
+    if not client:
+        abort(404) # Not found
+
+    # Pass client data to the template
+    # You might want to fetch related data like locations, contacts, assets here
+    # depending on what the detail page needs to show.
+    # For now, just pass the client object.
+    return render_template('client/client_detail.html', title=f"Client: {client.name}", client=client)

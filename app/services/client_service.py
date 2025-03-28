@@ -1,8 +1,6 @@
 from sqlalchemy import or_
 from app.models.client import Client, ClientLocation, ClientContact # Added ClientContact
-
-from app.models.client import Client, ClientLocation  # Renamed imports
-from app import db  # Corrected import
+from app import db
 import logging
 
 logger = logging.getLogger(__name__)
@@ -96,4 +94,35 @@ def create_client_with_details(form_data: dict) -> Client | None:
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error creating new client: {e}", exc_info=True)
+        return None
+
+
+
+def get_client_by_id(client_id: int) -> Client | None:
+    """Fetches a client by its ID, potentially with related data.
+
+    Args:
+        client_id: The ID of the client to fetch.
+
+    Returns:
+        The Client object if found, otherwise None.
+    """
+    try:
+        # Use options for eager loading of relationships if needed frequently on detail page
+        # from sqlalchemy.orm import joinedload
+        # client = Client.query.options(
+        #     joinedload(Client.locations),
+        #     joinedload(Client.contacts),
+        #     joinedload(Client.assets)
+        # ).get(client_id)
+
+        # Simple query for now
+        client = Client.query.get(client_id)
+
+        if not client:
+            logger.warning(f"Client with ID {client_id} not found.")
+            return None
+        return client
+    except Exception as e:
+        logger.error(f"Error fetching client with ID {client_id}: {e}", exc_info=True)
         return None
