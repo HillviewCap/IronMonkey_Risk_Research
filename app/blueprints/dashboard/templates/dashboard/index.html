@@ -1,0 +1,239 @@
+{% extends "base.html" %} {% block title %}Dashboard - IronMonkey Risk
+Research{% endblock %} {% block content %} {% block head_extra %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+{% endblock %}
+
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-4">
+    Central Command Dashboard
+  </h1>
+  <p class="mb-8 text-gray-700">
+    Welcome back, {{ current_user.first_name or current_user.username }}!
+  </p>
+  <!-- Quick Actions -->
+  <div class="mb-8"> {# Added margin-bottom #}
+    <h2 class="text-xl font-semibold text-gray-700 mb-4">Quick Actions</h2>
+    <div class="flex flex-wrap gap-3"> {# Changed from space-y-3 to flex layout #}
+      <a
+        href="{{ url_for('client.search_page') }}"
+        class="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
+      >
+        View All Clients
+      </a>
+      <a
+        href="#"
+        class="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
+      >
+        Add New Client {# TODO: Update url_for when route exists #}
+      </a>
+      <a
+        href="#"
+        class="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
+      >
+        Manage Assets {# TODO: Update url_for when route exists #}
+      </a>
+      <a
+        href="{{ url_for('risk.assessment_list') }}"
+        class="py-2 px-4 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
+      >
+        Start New Assessment {# TODO: Update url_for if needed #}
+      </a>
+      <a
+        href="#"
+        class="py-2 px-4 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
+      >
+        View Intelligence Feed {# TODO: Update url_for when route exists #}
+      </a>
+      <a
+        href="#"
+        class="py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
+      >
+        Generate Report {# TODO: Update url_for when route exists #}
+      </a>
+    </div>
+  </div>
+
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content Area (Span 2 columns on large screens) -->
+    <div class="lg:col-span-2"> {# Removed space-y-6 #}
+      <!-- Global Risk Heatmap Placeholder -->
+      <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">
+          Global Risk Heatmap
+        </h2>
+        <div
+          id="global-risk-map"
+          class="bg-gray-200 h-96 rounded flex items-center justify-center"
+          style="height: 384px"
+          {#
+          Explicit
+          height
+          for
+          testing
+          #}
+        >
+          <p class="text-gray-500">[Loading Map...]</p>
+          {# Updated placeholder text #} {# Map will be initialized here by
+          dashboard_map.js #}
+        </div>
+      </div>
+
+      <!-- Client Risk Overview -->
+      <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">
+            Client Risk Overview
+          </h2>
+          <a
+            href="{{ url_for('client.search_page') }}"
+            class="text-sm text-blue-600 hover:underline"
+            >View All Clients</a
+          >
+        </div>
+        {# Card Layout for Client Risk Overview #}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {% for client in clients %}
+            {% set badge_class = 'bg-gray-100 text-gray-800' %} {# Default for N/A #}
+            {% if client.risk_level == 'High' %}
+              {% set badge_class = 'bg-red-100 text-red-800' %}
+            {% elif client.risk_level == 'Medium' %}
+              {% set badge_class = 'bg-yellow-100 text-yellow-800' %}
+            {% elif client.risk_level == 'Low' %}
+              {% set badge_class = 'bg-green-100 text-green-800' %}
+            {% endif %}
+
+            <div class="bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-800">{{ client.name }}</h3>
+                  <p class="text-sm text-gray-600">{{ client.industry }}</p>
+                </div>
+                <span class="text-xs font-medium px-2.5 py-0.5 rounded {{ badge_class }}">
+                  {{ client.risk_level }}{% if client.risk_score is not none %} ({{ client.risk_score }}){% endif %}
+                </span>
+              </div>
+              <div class="text-sm text-gray-500 mb-3">
+                Last Assessment: {{ client.last_assessment_date }}
+              </div>
+              <div class="flex justify-end space-x-3 text-sm">
+                 <a href="{{ url_for('client.view_client', client_id=client.id) }}"
+                    class="font-medium text-blue-600 hover:text-blue-800"
+                    >View Client</a
+                  >
+                  <a href="{{ url_for('risk.new_assessment', client_id=client.id) }}"
+                     class="font-medium text-green-600 hover:text-green-800"
+                    >Start Assessment</a
+                  >
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if not clients %}
+          <p class="text-gray-500 mt-4">No high-risk clients to display.</p> {# Updated message #}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sidebar Area (Span 1 column on large screens) -->
+    <div class="lg:col-span-1"> {# Removed space-y-6 #}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> {# Changed xl: to lg: #}
+      <!-- Key Metric Summaries -->
+      <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Key Metrics</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-3 bg-gray-100 rounded">
+            <p class="text-2xl font-bold text-blue-600">15</p>
+            {# Placeholder #}
+            <p class="text-sm text-gray-600">Clients Managed</p>
+          </div>
+          <div class="text-center p-3 bg-gray-100 rounded">
+            <p class="text-2xl font-bold text-yellow-600">3</p>
+            {# Placeholder #}
+            <p class="text-sm text-gray-600">Active Assessments</p>
+          </div>
+          <div class="text-center p-3 bg-gray-100 rounded">
+            <p class="text-2xl font-bold text-red-600">8</p>
+            {# Placeholder #}
+            <p class="text-sm text-gray-600">High-Priority Findings</p>
+          </div>
+          <div class="text-center p-3 bg-gray-100 rounded">
+            <p class="text-2xl font-bold text-purple-600">5</p>
+            {# Placeholder #}
+            <p class="text-sm text-gray-600">New Alerts (24h)</p>
+          </div>
+          <div class="text-center p-3 bg-gray-100 rounded col-span-2">
+            {# Example for a wider metric #}
+            <p class="text-2xl font-bold text-indigo-600">120</p>
+            {# Placeholder #}
+            <p class="text-sm text-gray-600">Assets Monitored</p>
+          </div>
+          {# TODO: Fetch actual metrics in routes.py #}
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-gray-200">
+          <h3 class="text-md font-semibold text-gray-700 mb-3">Top Targeted Sectors (Last 30d)</h3>
+          {% if top_sectors %}
+            <ul class="space-y-2">
+              {% for item in top_sectors %}
+                <li class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">{{ item.sector }}</span>
+                  <span class="font-medium text-gray-800">{{ item.count }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-sm text-gray-500">No sector data available.</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Recent Intelligence Feed -->
+      <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">
+          Recent Intelligence
+        </h2>
+        <ul class="space-y-3">
+          {% for item in intelligence_items %}
+            <li class="border-b pb-2 last:border-b-0"> {# Add styling for last item #}
+              <p class="text-sm font-medium text-gray-800">
+                {{ item.title }}
+              </p>
+              <p class="text-xs text-gray-500">
+                Source: {{ item.source }} | {{ item.date }}
+              </p>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if not intelligence_items %} {# Assumes 'intelligence_items' variable
+        #}
+        <p class="text-gray-500 mt-4">No recent intelligence items.</p>
+        {% endif %}
+        <div class="mt-4">
+          <a href="#" class="text-sm text-blue-600 hover:underline"
+            >View Full Feed</a
+          >
+          {# TODO: Update url_for #}
+        </div>
+      </div>
+      </div>
+
+      {% block scripts %}
+      <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+      ></script>
+      <script src="{{ url_for('static', filename='js/dashboard_map.js') }}"></script>
+      {% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

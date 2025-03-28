@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Intelligence Feed{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Intelligence Feed</h1>
+            <p class="text-lg text-gray-600">Curated geopolitical and cyber risk intelligence</p>
+        </div>
+        <!-- Add actions if needed, e.g., filter, add source -->
+    </div>
+
+    <!-- Placeholder Content -->
+    <div class="bg-white p-6 shadow rounded-lg">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Latest Intelligence Updates</h2>
+        <div class="space-y-4">
+            <!-- Example Item 1 -->
+            <div class="border p-4 rounded-md">
+                <h3 class="text-lg font-medium text-gray-900">Increased Cyber Activity Targeting Financial Sector in Region X</h3>
+                <p class="text-sm text-gray-500">Source: Threat Intel Provider A | Date: 2025-03-25</p>
+                <p class="mt-2 text-gray-700">Reports indicate a surge in phishing campaigns and DDoS attacks aimed at major banks and investment firms in Region X, potentially linked to state-sponsored group Y.</p>
+                <div class="mt-2">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">High Impact</span>
+                    <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Cyber Risk</span>
+                </div>
+            </div>
+            <!-- Example Item 2 -->
+            <div class="border p-4 rounded-md">
+                <h3 class="text-lg font-medium text-gray-900">Upcoming Elections in Country Z May Lead to Market Volatility</h3>
+                <p class="text-sm text-gray-500">Source: Geopolitical Analysis Firm B | Date: 2025-03-24</p>
+                <p class="mt-2 text-gray-700">Analysts predict potential disruptions and policy shifts following the upcoming presidential election in Country Z, advising caution for investments in the region.</p>
+                 <div class="mt-2">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium Impact</span>
+                    <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Geopolitical Risk</span>
+                </div>
+            </div>
+            <!-- Add more items or dynamic loading here -->
+            <p class="text-center text-gray-500 pt-4">--- End of Feed ---</p>
+        </div>
+    </div>
+
+    <!-- Add Filters or Search if needed -->
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold mb-2 text-gray-700">Filter Feed</h3>
+        <div class="bg-white p-4 shadow rounded-lg flex space-x-4">
+            <input type="text" placeholder="Keywords..." class="flex-grow rounded-md border-gray-300 shadow-sm">
+            <select class="rounded-md border-gray-300 shadow-sm">
+                <option>All Risk Types</option>
+                <option>Geopolitical</option>
+                <option>Cyber</option>
+                <option>Economic</option>
+            </select>
+            <button class="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filter</button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

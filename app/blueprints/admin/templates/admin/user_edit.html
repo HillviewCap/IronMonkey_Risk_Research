@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{% if user %}Edit User{% else %}New User{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">
+        {% if user %}Edit User{% else %}New User{% endif %}
+    </h1>
+    <p>User edit/creation form goes here.</p>
+    {# Placeholder for user form #}
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Risk Dashboard</h1>
+            <p class="text-lg text-gray-600">Overview of risk assessments and metrics</p>
+        </div>
+        <div>
+            <a href="{{ url_for('risk.assessment_new') }}" class="
+                py-2 px-4
+                bg-blue-600 text-white rounded-md
+                hover:bg-blue-700 focus:outline-none focus:ring-2
+            ">New Assessment</a>
+            <a href="{{ url_for('risk.assessment_list') }}" class="
+                ml-2 py-2 px-4
+                bg-gray-600 text-white rounded-md
+                hover:bg-gray-700 focus:outline-none focus:ring-2
+            ">View All Assessments</a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-4 shadow rounded-lg">
+            <h3 class="text-sm font-medium text-gray-500">Total Assessments</h3>
+            <p class="mt-1 text-3xl font-semibold text-gray-900">{{ total_assessments }}</p>
+        </div>
+        <div class="bg-white p-4 shadow rounded-lg">
+            <h3 class="text-sm font-medium text-gray-500">Completed Assessments</h3>
+            <p class="mt-1 text-3xl font-semibold text-green-600">{{ completed_assessments }}</p>
+        </div>
+        <div class="bg-white p-4 shadow rounded-lg">
+            <h3 class="text-sm font-medium text-gray-500">In Progress Assessments</h3>
+            <p class="mt-1 text-3xl font-semibold text-yellow-600">{{ in_progress_assessments }}</p>
+        </div>
+    </div>
+
+    <!-- Recent Assessments Section -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Recent Assessments</h2>
+            <a href="{{ url_for('risk.assessment_list') }}" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+        </div>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <ul class="divide-y divide-gray-200">
+                {% if recent_assessments %}
+                    {% for assessment in recent_assessments %}
+                    <li class="px-4 py-4 sm:px-6">
+                        <div class="flex items-center justify-between">
+                            <a href="{{ url_for('risk.assessment_detail', assessment_id=assessment.id) }}" class="text-sm font-medium text-indigo-600 truncate hover:text-indigo-800">
+                                {{ assessment.name }}
+                            </a>
+                            <div class="ml-2 flex-shrink-0 flex">
+                                <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if assessment.status == 'complete' %}
+                                        bg-green-100 text-green-800
+                                    {% elif assessment.status == 'in_progress' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-gray-100 text-gray-800
+                                    {% endif %}
+                                ">
+                                    {{ assessment.status|capitalize }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-2 sm:flex sm:justify-between">
+                            <div class="sm:flex">
+                                <p class="flex items-center text-sm text-gray-500">
+                                    Client: {{ assessment.client.name }}
+                                </p>
+                                <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                    Type: {{ assessment.assessment_type }}
+                                </p>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                <p>Updated: {{ assessment.updated_at.strftime('%Y-%m-%d') }}</p>
+                                {% if assessment.risk_score %}
+                                <p class="ml-4 px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if assessment.risk_score >= 75 %}
+                                        bg-red-100 text-red-800
+                                    {% elif assessment.risk_score >= 50 %}
+                                        bg-orange-100 text-orange-800
+                                    {% elif assessment.risk_score >= 25 %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-green-100 text-green-800
+                                    {% endif %}
+                                ">
+                                    Risk Score: {{ assessment.risk_score }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="px-4 py-4 sm:px-6 text-center text-gray-500">No assessments found.</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- High Risk Assessments Section -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">High Risk Assessments</h2>
+        </div>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <ul class="divide-y divide-gray-200">
+                {% if high_risk_assessments %}
+                    {% for assessment in high_risk_assessments %}
+                    <li class="px-4 py-4 sm:px-6">
+                        <div class="flex items-center justify-between">
+                            <a href="{{ url_for('risk.assessment_detail', assessment_id=assessment.id) }}" class="text-sm font-medium text-indigo-600 truncate hover:text-indigo-800">
+                                {{ assessment.name }}
+                            </a>
+                            <div class="ml-2 flex-shrink-0 flex">
+                                <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    Risk Score: {{ assessment.risk_score }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-2 sm:flex sm:justify-between">
+                            <div class="sm:flex">
+                                <p class="flex items-center text-sm text-gray-500">
+                                    Client: {{ assessment.client.name }}
+                                </p>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                <a href="{{ url_for('risk.assessment_detail', assessment_id=assessment.id) }}" class="text-indigo-600 hover:text-indigo-900">View Details</a>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="px-4 py-4 sm:px-6 text-center text-gray-500">No high risk assessments found.</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Framework Statistics Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Framework Category Distribution</h2>
+        <div class="bg-white p-6 shadow rounded-lg">
+            {% if framework_stats %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for category, count in framework_stats.items() %}
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-sm font-medium text-gray-700">{{ category }}</h3>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900">{{ count }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-gray-500">No framework statistics available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Visualization Placeholder -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Risk Trends</h2>
+        <div class="bg-white p-6 shadow rounded-lg">
+            <div class="flex items-center justify-center h-64 bg-gray-100 rounded-md">
+                <p class="text-gray-500">Risk trend visualization placeholder</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

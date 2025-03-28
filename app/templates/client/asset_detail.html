@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asset Detail</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      #map {
+        height: 400px;
+      }
+      .loading {
+        font-style: italic;
+        color: gray;
+      }
+      .error {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Asset Detail</h1>
+    <div id="asset-info">
+      <p class="loading" id="loading">Loading asset details...</p>
+    </div>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+      // Utility function to get query parameters from URL
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      // Get asset id from query parameter 'id'
+      const assetId = getQueryParam("id");
+      if (!assetId) {
+        document.getElementById("asset-info").innerHTML =
+          '<p class="error">No asset ID provided in URL.</p>';
+      } else {
+        fetch(`/assets/${assetId}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Asset not found or an error occurred.");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            const asset = data.asset;
+            const assetInfoDiv = document.getElementById("asset-info");
+            assetInfoDiv.innerHTML = `
+              <h2 id="asset-name">${asset.name}</h2>
+              <p id="asset-type">Type: ${asset.asset_type}</p>
+              <p id="asset-description">${asset.description || ""}</p>
+              <p id="asset-criticality">Criticality: ${
+                asset.criticality_score
+              }</p>
+            `;
+            // If latitude and longitude are available, initialize map
+            if (asset.latitude && asset.longitude) {
+              const map = L.map("map").setView(
+                [asset.latitude, asset.longitude],
+                13
+              );
+              L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+                  maxZoom: 19,
+                  attribution: "© OpenStreetMap",
+                }
+              ).addTo(map);
+              L.marker([asset.latitude, asset.longitude])
+                .addTo(map)
+                .bindPopup(asset.name)
+                .openPopup();
+            } else {
+              document.getElementById("map").innerHTML =
+                '<p class="error">Geo-location data not available for this asset.</p>';
+            }
+          })
+          .catch((error) => {
+            document.getElementById(
+              "asset-info"
+            ).innerHTML = `<p class="error">${error.message}</p>`;
+            document.getElementById("map").innerHTML = "";
+          });
+      }
+    </script>
+  </body>
+</html>
