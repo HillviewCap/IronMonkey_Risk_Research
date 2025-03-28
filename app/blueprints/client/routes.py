@@ -3,6 +3,7 @@ from flask_login import login_required
 from app.services.client_service import search_clients, create_client_with_details, get_client_by_id
 from .forms import ClientOnboardingForm
 from . import client_bp
+from app.models.client import Client # Import Client model
 # Removed Client import as it's not directly used here
 from app.models.framework import IndustryProfile # Import IndustryProfile
 
@@ -23,11 +24,45 @@ def client_search():
     )
 
 
-@client_bp.route("/clients/search", methods=["GET"])
+@client_bp.route('/clients', methods=['GET'])
 @login_required
-def search_page():
-    return render_template("client/search.html")
+def client_landing():
+    """Display a landing page with a list of clients, optionally filtered by search."""
+    query = request.args.get("query", "")
+    industry_filter = request.args.get("industry", "")
+    country_filter = request.args.get("country", "")
 
+    # Fetch clients using the search service
+    clients = search_clients(query, industry_filter, country_filter)
+
+    # Fetch choices for dropdowns
+    try:
+        industries_query = IndustryProfile.query.order_by(IndustryProfile.category, IndustryProfile.industry).all()
+        industry_choices = [("", "-- All Industries --")] + [
+            (ind.industry, f"{ind.category}: {ind.industry}") for ind in industries_query
+        ]
+    except Exception as e:
+        current_app.logger.error(f"Failed to load industries for client landing search: {e}", exc_info=True)
+        industry_choices = [("", "Error loading industries")]
+
+    country_choices = current_app.config.get('COUNTRIES', [("", "Error loading countries")])
+    # Ensure the format is (value, label) and add an "All" option
+    if country_choices and isinstance(country_choices[0], tuple):
+         country_choices = [("", "-- All Countries --")] + country_choices
+    else: # Handle potential simple list format
+         country_choices = [("", "-- All Countries --")] + [(c, c) for c in country_choices]
+
+
+    return render_template(
+        'client/landing.html',
+        title='Clients',
+        clients=clients,
+        industry_choices=industry_choices,
+        country_choices=country_choices,
+        search_query=query,
+        search_industry=industry_filter,
+        search_country=country_filter
+    )
 
 
 @client_bp.route('/clients/onboard', methods=['GET', 'POST'])

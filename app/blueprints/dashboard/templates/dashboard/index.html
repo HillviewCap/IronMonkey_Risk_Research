@@ -20,7 +20,7 @@ Research{% endblock %} {% block content %} {% block head_extra %}
     <h2 class="text-xl font-semibold text-gray-700 mb-4">Quick Actions</h2>
     <div class="flex flex-wrap gap-3"> {# Changed from space-y-3 to flex layout #}
       <a
-        href="{{ url_for('client.search_page') }}"
+        href="{{ url_for('client.client_landing') }}"
         class="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium" {# Removed block, w-full, text-center #}
       >
         View All Clients
@@ -91,7 +91,7 @@ Research{% endblock %} {% block content %} {% block head_extra %}
             Client Risk Overview
           </h2>
           <a
-            href="{{ url_for('client.search_page') }}"
+            href="{{ url_for('client.client_landing') }}"
             class="text-sm text-blue-600 hover:underline"
             >View All Clients</a
           >
