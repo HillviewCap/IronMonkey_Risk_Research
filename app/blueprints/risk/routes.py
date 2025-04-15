@@ -229,7 +229,7 @@ def assessment_detail(assessment_id):
 
     form = AddFindingForm()  # Instantiate the form
     return render_template(
-        "risk/assessment_detail.html",
+        "assessment_detail.html",  # Removed 'risk/' prefix
         assessment=assessment,
         client=client,
         findings=findings,
@@ -474,7 +474,7 @@ def scenario_list():
 # API Endpoints for Risk Assessment Engine
 
 
-@risk_bp.route("/api/v1/risk-assessments/", methods=["GET"])
+@risk_bp.route("/api/v1/risk-assessments", methods=["GET"])  # Removed trailing slash
 @login_required
 def list_assessments_api():
     """

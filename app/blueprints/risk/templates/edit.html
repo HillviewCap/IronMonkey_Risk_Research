@@ -1,7 +1,137 @@
 {% extends "base.html" %} {% block title %}{% if assessment %}Edit Risk
 Assessment{% else %}New Risk Assessment{% endif %}{% endblock %} {% block
 content %}
-<div class="container mx-auto px-4 py-8">
+<div
+  class="container mx-auto px-4 py-8"
+  x-data="{
+       formData: {
+         client_id: '{{ assessment.client_id if assessment else '' }}',
+         name: '{{ assessment.name | e if assessment else '' }}',
+         assessment_date: '{{ assessment.assessment_date.strftime('%Y-%m-%d') if assessment and assessment.assessment_date else '' }}',
+         assessment_type: '{{ assessment.assessment_type if assessment else '' }}',
+         status: '{{ assessment.status if assessment else 'draft' }}',
+         scoring_config_id: '{{ assessment.scoring_config_id if assessment and assessment.scoring_config_id is not none else '' }}',
+         description: '{{ assessment.description | e if assessment else '' }}'
+       },
+       isEditMode: {{ 'true' if assessment else 'false' }},
+       assessmentId: {{ assessment.id | tojson if assessment else 'null' }},
+       notifications: {
+         messages: [],
+         show(message, type = 'success', duration = 5000) {
+           const id = Date.now();
+           this.messages.push({ id, message, type });
+           setTimeout(() => this.dismiss(id), duration);
+         },
+         dismiss(id) {
+           const index = this.messages.findIndex(msg => msg.id === id);
+           if (index !== -1) this.messages.splice(index, 1);
+         }
+       },
+       getCsrfToken() {
+         const csrfMeta = document.querySelector('meta[name=\'csrf-token\']');
+         return csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}';
+       },
+       async handleApiResponse(response, successMessage, errorMessagePrefix) {
+         let data;
+         try {
+           data = await response.json();
+         } catch (e) {
+           console.error('Failed to parse response:', e);
+           this.notifications.show(`${errorMessagePrefix}: Invalid response format`, 'error');
+           return false;
+         }
+         
+         if (response.ok && data.status === 'success') {
+           this.notifications.show(successMessage);
+           return data.data || true;
+         } else {
+           const message = data.error?.message || 'An unknown error occurred.';
+           this.notifications.show(`${errorMessagePrefix}: ${message}`, 'error');
+           console.error('API Error:', data.error || data);
+           return false;
+         }
+       },
+       submitAssessmentForm() {
+         const formData = this.formData;
+         let url, method, successMessage, errorMessagePrefix, redirectUrl;
+
+         if (!formData.client_id?.trim() || !formData.name?.trim() || !formData.assessment_date?.trim()) {
+           this.notifications.show('Please fill in all required fields (Client, Assessment Name, Assessment Date).', 'error');
+           return;
+         }
+
+         if (this.isEditMode) {
+           const assessmentId = this.assessmentId;
+           if (!assessmentId) {
+             this.notifications.show('Error: Assessment ID missing for update.', 'error');
+             return;
+           }
+           url = `/risk/api/v1/risk-assessments/${assessmentId}`; // Added /risk prefix
+           method = 'PUT';
+           successMessage = 'Assessment updated successfully!';
+           errorMessagePrefix = 'Error updating assessment';
+           redirectUrl = `/risk/assessments/${assessmentId}`;
+         } else {
+           url = '/risk/api/v1/risk-assessments'; // Added /risk prefix
+           method = 'POST';
+           successMessage = 'Assessment created successfully!';
+           errorMessagePrefix = 'Error creating assessment';
+         }
+
+         fetch(url, {
+           method: method,
+           headers: {
+             'Content-Type': 'application/json',
+             'X-CSRFToken': this.getCsrfToken(),
+           },
+           body: JSON.stringify(formData),
+         })
+         .then(response => this.handleApiResponse(response, successMessage, errorMessagePrefix))
+         .then(result => {
+           if (result) {
+             if (typeof result === 'object' && result.id && !this.isEditMode) {
+               window.location.href = `/risk/assessments/${result.id}`;
+             } else if (this.isEditMode) {
+               window.location.href = redirectUrl;
+             } else if (!this.isEditMode) {
+               console.warn('Assessment created, but no ID returned in response. Redirecting to list.');
+               window.location.href = '/risk/assessments';
+             }
+           }
+         })
+         .catch(error => {
+           console.error('Fetch Error:', error);
+           this.notifications.show(`A network error occurred while ${this.isEditMode ? 'updating' : 'creating'} the assessment.`, 'error');
+         });
+       }
+     }"
+>
+  <!-- Notification component -->
+  <div
+    x-show="notifications.messages.length > 0"
+    class="fixed top-4 right-4 z-50 space-y-2 max-w-md"
+    style="min-width: 300px"
+  >
+    <template x-for="msg in notifications.messages" :key="msg.id">
+      <div
+        class="flex items-center p-4 mb-2 rounded-md shadow-md transition-all duration-300 transform translate-x-0"
+        :class="{
+          'bg-green-100 text-green-800 border-l-4 border-green-500': msg.type === 'success',
+          'bg-red-100 text-red-800 border-l-4 border-red-500': msg.type === 'error',
+          'bg-blue-100 text-blue-800 border-l-4 border-blue-500': msg.type === 'info'
+        }"
+      >
+        <div class="flex-grow" x-text="msg.message"></div>
+        <button
+          @click="notifications.dismiss(msg.id)"
+          class="ml-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+        >
+          &times;
+        </button>
+      </div>
+    </template>
+  </div>
+
   <div
     class="flex justify-between items-center mb-6 border-b pb-4 border-gray-200"
   >
@@ -11,99 +141,15 @@ content %}
     </h1>
   </div>
 
-  <div
-    class="bg-white shadow overflow-hidden sm:rounded-lg p-6"
-    x-data="{
-      formData: {
-        client_id: '{{ assessment.client_id if assessment else '' }}',
-        name: '{{ assessment.name | e if assessment else '' }}',
-        assessment_date: '{{ assessment.assessment_date.strftime('%Y-%m-%d') if assessment and assessment.assessment_date else '' }}',
-        assessment_type: '{{ assessment.assessment_type if assessment else '' }}',
-        status: '{{ assessment.status if assessment else 'draft' }}',
-        scoring_config_id: '{{ assessment.scoring_config_id if assessment and assessment.scoring_config_id is not none else '' }}',
-        description: '{{ assessment.description | e if assessment else '' }}'
-      },
-      isEditMode: {{ 'true' if assessment else 'false' }},
-      assessmentId: {{ assessment.id | tojson if assessment else 'null' }},
-      getCsrfToken() {
-        const csrfMeta = document.querySelector('meta[name=\"csrf-token\"]');
-        return csrfMeta ? csrfMeta.getAttribute(\"content\") : \"{{ csrf_token() }}\";
-      },
-      async handleApiResponse(response, successMessage, errorMessagePrefix) {
-        const data = await response.json();
-        if (response.ok && data.status === \"success\") {
-          alert(successMessage);
-          return data.data || true;
-        } else {
-          const message = data.error?.message || \"An unknown error occurred.\";
-          alert(`${errorMessagePrefix}: ${message}`);
-          console.error(\"API Error:\", data.error || data);
-          return false;
-        }
-      },
-      submitAssessmentForm() {
-        const formData = this.formData;
-        
-        let url;
-        let method;
-        let successMessage;
-        let errorMessagePrefix;
-        let redirectUrl;
-        
-        if (this.isEditMode) {
-          const assessmentId = this.assessmentId;
-          if (!assessmentId) {
-            alert(\"Error: Assessment ID missing for update.\");
-            return;
-          }
-          url = `/api/v1/risk-assessments/${assessmentId}`;
-          method = \"PUT\";
-          successMessage = \"Assessment updated successfully!\";
-          errorMessagePrefix = \"Error updating assessment\";
-          redirectUrl = `/risk/assessments/${assessmentId}`;
-        } else {
-          url = `/api/v1/risk-assessments`;
-          method = \"POST\";
-          successMessage = \"Assessment created successfully!\";
-          errorMessagePrefix = \"Error creating assessment\";
-        }
-        
-        if (!formData.client_id?.trim() || !formData.name?.trim() || !formData.assessment_date?.trim()) {
-          alert(\"Please fill in all required fields (Client, Name, Assessment Date).\");
-          return;
-        }
-        
-        fetch(url, {
-          method: method,
-          headers: {
-            \"Content-Type\": \"application/json\",
-            \"X-CSRFToken\": this.getCsrfToken(),
-          },
-          body: JSON.stringify(formData),
-        })
-        .then((response) => this.handleApiResponse(response, successMessage, errorMessagePrefix))
-        .then((result) => {
-          if (result) {
-            if (typeof result === \"object\" && result.id) {
-              window.location.href = `/risk/assessments/${result.id}`;
-            } else if (!this.isEditMode) {
-              console.warn('Assessment created, but no ID returned in response. Redirecting to list.');
-              window.location.href = '/risk/assessments';
-            } else if (this.isEditMode) {
-              window.location.href = redirectUrl;
-            }
-          }
-        })
-        .catch((error) => {
-          console.error(\"Fetch Error:\", error);
-          alert(`A network error occurred while ${this.isEditMode ? \"updating\" : \"creating\"} the assessment.`);
-        });
-      }
-    }">
-    <form @submit.prevent="submitAssessmentForm" method="POST" action="javascript:void(0);">
-      {# CSRF token will be sent via JS header, hidden input removed #} {% with
-      messages = get_flashed_messages(with_categories=true) %} {% if messages %}
-      {% for category, message in messages %}
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+    <form
+      @submit.prevent="submitAssessmentForm"
+      method="POST"
+      action="javascript:void(0);"
+    >
+      {# Display flashed messages if any #} {% with messages =
+      get_flashed_messages(with_categories=true) %} {% if messages %} {% for
+      category, message in messages %}
       <div
         class="mb-4 p-4 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}"
       >
@@ -112,6 +158,7 @@ content %}
       {% endfor %} {% endif %} {% endwith %}
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {# Client Dropdown #}
         <div>
           <label for="client_id" class="block text-sm font-medium text-gray-700"
             >Client *</label
@@ -125,13 +172,12 @@ content %}
           >
             <option value="">Select Client</option>
             {% for client in clients %}
-            <option value="{{ client.id }}">
-              {# Selected handled by x-model #} {{ client.name }}
-            </option>
+            <option value="{{ client.id }}">{{ client.name }}</option>
             {% endfor %}
           </select>
         </div>
 
+        {# Assessment Name Input #}
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700"
             >Assessment Name *</label
@@ -146,6 +192,7 @@ content %}
           />
         </div>
 
+        {# Assessment Date Input #}
         <div>
           <label
             for="assessment_date"
@@ -162,6 +209,7 @@ content %}
           />
         </div>
 
+        {# Assessment Type Dropdown #}
         <div>
           <label
             for="assessment_type"
@@ -176,13 +224,12 @@ content %}
           >
             <option value="">Select Type</option>
             {% for type in assessment_types %}
-            <option value="{{ type }}">
-              {# Selected handled by x-model #} {{ type }}
-            </option>
+            <option value="{{ type }}">{{ type }}</option>
             {% endfor %}
           </select>
         </div>
 
+        {# Status Dropdown #}
         <div>
           <label for="status" class="block text-sm font-medium text-gray-700"
             >Status</label
@@ -193,14 +240,15 @@ content %}
             x-model="formData.status"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           >
-            {% for status in statuses %}
-            <option value="{{ status }}">
-              {# Selected handled by x-model #} {{ status|capitalize }}
+            {% for status_val in statuses %}
+            <option value="{{ status_val }}">
+              {{ status_val|capitalize }}
             </option>
             {% endfor %}
           </select>
         </div>
 
+        {# Scoring Configuration Dropdown #}
         <div>
           <label
             for="scoring_config_id"
@@ -215,14 +263,13 @@ content %}
           >
             <option value="">None</option>
             {% for config in scoring_configs %}
-            <option value="{{ config.id }}">
-              {# Selected handled by x-model #} {{ config.name }}
-            </option>
+            <option value="{{ config.id }}">{{ config.name }}</option>
             {% endfor %}
           </select>
         </div>
       </div>
 
+      {# Description Textarea #}
       <div class="mt-6">
         <label for="description" class="block text-sm font-medium text-gray-700"
           >Description</label
@@ -236,6 +283,7 @@ content %}
         ></textarea>
       </div>
 
+      {# Action Buttons #}
       <div class="mt-8 flex justify-end">
         <a
           href="{{ url_for('risk.assessment_list') }}"
@@ -245,7 +293,6 @@ content %}
         </a>
         <button
           type="submit"
-          @click.prevent="submitAssessmentForm"
           class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           {% if assessment %}Update Assessment{% else %}Create Assessment{%
@@ -255,15 +302,4 @@ content %}
     </form>
   </div>
 </div>
-
-<script>
-  // Global helper functions can remain if needed elsewhere,
-  // but the core logic is now within the Alpine component.
-  // For now, we remove the duplicated functions.
-
-  // Removed getCsrfToken() - now inside x-data
-  // Removed handleApiResponse() - now inside x-data
-  // Removed submitAssessmentForm() - now inside x-data
-</script>
-
 {% endblock %}

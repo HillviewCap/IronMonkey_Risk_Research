@@ -1,57 +1,166 @@
-{% extends "base.html" %}
-{% from "_form_helpers.html" import render_field %}
-
-{% block title %}{{ title }}{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% from "_form_helpers.html" import render_field %} {%
+block title %}{{ title }}{% endblock %} {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6 text-gray-800">{{ title }} for {{ client.name }}</h1>
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">
+    {{ title }} for {{ client.name }}
+  </h1>
 
-    {# Display flashed messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="p-4 mb-4 text-sm rounded-lg
-                    {% if category == 'danger' %} bg-red-100 text-red-700
-                    {% elif category == 'success' %} bg-green-100 text-green-700
-                    {% else %} bg-blue-100 text-blue-700 {% endif %}"
-                    role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+  {# Display flashed messages #} {% with messages =
+  get_flashed_messages(with_categories=true) %} {% if messages %} {% for
+  category, message in messages %}
+  <div
+    class="p-4 mb-4 text-sm rounded-lg {% if category == 'danger' %} bg-red-100 text-red-700 {% elif category == 'success' %} bg-green-100 text-green-700 {% else %} bg-blue-100 text-blue-700 {% endif %}"
+    role="alert"
+  >
+    {{ message }}
+  </div>
+  {% endfor %} {% endif %} {% endwith %} {# Determine action URL #} {% if asset
+  %} {% set action_url = url_for('client.edit_asset', client_id=client.id,
+  asset_id=asset.id) %} {% else %} {% set action_url =
+  url_for('client.add_asset', client_id=client.id) %} {% endif %}
 
-    {# Determine action URL #}
-    {% if asset %}
-        {% set action_url = url_for('client.edit_asset', client_id=client.id, asset_id=asset.id) %}
-    {% else %}
-        {% set action_url = url_for('client.add_asset', client_id=client.id) %}
-    {% endif %}
+  <form
+    method="POST"
+    action="{{ action_url }}"
+    novalidate
+    class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+  >
+    {{ form.hidden_tag() }} {# Define standard input classes #} {% set
+    input_class = 'mt-1 block w-full px-3 py-2 bg-white border border-gray-300
+    rounded-md shadow-sm focus:outline-none focus:ring-indigo-500
+    focus:border-indigo-500 sm:text-sm' %} {% set textarea_class = input_class +
+    ' min-h-[90px]' %} {# Slightly taller for JSON #}
 
-    <form method="POST" action="{{ action_url }}" novalidate class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        {{ form.hidden_tag() }}
+    <fieldset class="mb-8 border border-gray-300 p-4 rounded">
+      <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">
+        Asset Details
+      </legend>
+      {{ render_field(form.name, class=input_class) }} {{
+      render_field(form.asset_type, class=input_class) }} {{
+      render_field(form.description, class=textarea_class, rows=3) }} {{
+      render_field(form.criticality_score, class=input_class, type='number',
+      min=1, max=10) }} {{ render_field(form.location_id, class=input_class) }}
+      {# --- Technical Details (Categories) Input --- #}
+      <div
+        x-data="{
+                categories: [], // Initialize as empty array first
+                newCategory: '',
+                // No hiddenValue needed
 
-        {# Define standard input classes #}
-        {% set input_class = 'mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm' %}
-        {% set textarea_class = input_class + ' min-h-[90px]' %} {# Slightly taller for JSON #}
+                init() {
+                    // Initialize categories based on whether we are editing (asset exists) or adding (asset is undefined)
+                    let initialJson = '[]'; // Default for adding new asset
+                    {% if asset is defined and asset.technical_details %}
+                        // If editing and asset has details, use them
+                        initialJson = '{{ asset.technical_details | tojson | safe }}';
+                    {% endif %}
 
-        <fieldset class="mb-8 border border-gray-300 p-4 rounded">
-            <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">Asset Details</legend>
-            {{ render_field(form.name, class=input_class) }}
-            {{ render_field(form.asset_type, class=input_class) }}
-            {{ render_field(form.description, class=textarea_class, rows=3) }}
-            {{ render_field(form.criticality_score, class=input_class, type='number', min=1, max=10) }}
-            {{ render_field(form.location_id, class=input_class) }}
-            {{ render_field(form.technical_details, class=textarea_class, rows=5, placeholder='Enter details as valid JSON, e.g., {"ip_address": "192.168.1.100", "os": "Linux"}') }}
-        </fieldset>
+                    try {
+                        const initialData = JSON.parse(initialJson);
+                        this.categories = Array.isArray(initialData) ? initialData : [];
+                    } catch (e) {
+                        console.error('Error parsing initial categories:', e, 'Raw JSON:', initialJson);
+                        this.categories = []; // Default to empty array on error
+                    }
 
-        <div class="flex items-center justify-between mt-6">
-            {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
-            <a href="{{ url_for('client.client_detail', client_id=client.id) }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
-                Cancel
-            </a>
+                    // Set initial hidden input value using $refs and watch for changes
+                    // Need a slight delay for $refs to be available in init
+                    this.$nextTick(() => {
+                        this.$refs.hiddenTechDetails.value = JSON.stringify(this.categories);
+                        console.log('[Alpine Init] Initial hidden input value set to:', this.$refs.hiddenTechDetails.value);
+                    });
+                    this.$watch('categories', (newValue) => {
+                        // Directly set the input value using $refs
+                        this.$refs.hiddenTechDetails.value = JSON.stringify(newValue);
+                        console.log('[Alpine Watcher] categories changed, hidden input value set to:', this.$refs.hiddenTechDetails.value);
+                    });
+                },
+                addCategory() {
+                    const cat = this.newCategory.trim();
+                    if (cat === '') return;
+                    if (Array.isArray(this.categories) && !this.categories.includes(cat)) {
+                        this.categories.push(cat); // This should trigger the watcher
+                    } else if (!Array.isArray(this.categories)) {
+                         console.error('Cannot add category: categories is not an array', this.categories);
+                         this.categories = [cat]; // Attempt recovery
+                    }
+                    this.newCategory = '';
+                },
+                removeCategory(index) {
+                    if (Array.isArray(this.categories)) {
+                        this.categories.splice(index, 1); // This should trigger the watcher
+                    } else {
+                         console.error('Cannot remove category: categories is not an array', this.categories);
+                    }
+                }
+            }"
+        class="mb-4"
+      >
+        {# Hidden input storing the JSON string list #}
+        <input
+          type="hidden"
+          name="{{ form.technical_details.name }}"
+          id="{{ form.technical_details.id }}"
+          x-ref="hiddenTechDetails"
+        />
+
+        <label
+          for="new-category-input"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Technical Details (Add Categories)</label
+        >
+
+        {# Input for adding new categories #}
+        <div class="flex rounded-md shadow-sm">
+          <input
+            type="text"
+            id="new-category-input"
+            x-model="newCategory"
+            @keydown.enter.prevent="addCategory()"
+            placeholder="Type category and press Enter or click Add"
+            class="flex-1 block w-full rounded-none rounded-l-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm {{ input_class }}"
+          />
+          <button
+            type="button"
+            @click="addCategory()"
+            class="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 rounded-r-md hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            Add
+          </button>
         </div>
-    </form>
+
+        {# Display area for categories #}
+        <div class="mt-2 flex flex-wrap gap-2" x-show="categories.length > 0">
+          <template x-for="(category, index) in categories" :key="index">
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+            >
+              <span x-text="category"></span>
+              <button
+                type="button"
+                @click="removeCategory(index)"
+                class="ml-1.5 flex-shrink-0 text-indigo-400 hover:text-indigo-500 focus:outline-none focus:text-indigo-500"
+              >
+                <span class="sr-only">Remove</span>&times;
+              </button>
+            </span>
+          </template>
+        </div>
+      </div>
+      {# --- End Technical Details (Categories) Input --- #}
+    </fieldset>
+
+    <div class="flex items-center justify-between mt-6">
+      {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white
+      font-bold py-2 px-4 rounded focus:outline-none focus:ring-2
+      focus:ring-offset-2 focus:ring-indigo-500") }}
+      <a
+        href="{{ url_for('client.client_detail', client_id=client.id) }}"
+        class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800"
+      >
+        Cancel
+      </a>
+    </div>
+  </form>
 </div>
 {% endblock %}

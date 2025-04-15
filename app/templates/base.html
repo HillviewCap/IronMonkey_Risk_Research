@@ -3,11 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{% block title %}IronMonkey Risk Research{% endblock %}</title>
     <link
-      href="{{ url_for('static', filename='css/styles.css') }}" {# Updated path #}
+      href="{{ url_for('static', filename='css/styles.css') }}"
+      {#
+      Updated
+      path
+      #}
       rel="stylesheet"
     />
+    <!-- Alpine.js (local) -->
+    <script
+      defer
+      src="{{ url_for('static', filename='js/vendor/alpine.min.js') }}"
+    ></script>
     {% block head_extra %}{% endblock %}
   </head>
   <body class="bg-gray-100">
