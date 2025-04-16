@@ -139,4 +139,4 @@ cython_debug/
 
 # VS Code
 .vscode/
-flask_session/
+flask_session
