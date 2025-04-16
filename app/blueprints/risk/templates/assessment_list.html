@@ -1,90 +1,166 @@
-{% extends "base.html" %}
-
-{% block title %}Risk Assessments{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Risk Assessments{% endblock %} {%
+block content %}
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Risk Assessments</h1>
-        <a href="{{ url_for('risk_bp.create_assessment') }}" 
-           class="
-             py-2 px-4            
-             bg-blue-600 text-white rounded-md 
-             hover:bg-blue-700 focus:outline-none focus:ring-2 
-           ">
-            Create New Assessment
-        </a>
-    </div>
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Risk Assessments</h1>
+    <a
+      href="{{ url_for('risk_bp.create_assessment') }}"
+      class="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2"
+    >
+      Create New Assessment
+    </a>
+  </div>
 
-    <!-- Filters Section (Placeholder) -->
-    <div class="mb-6 p-4 bg-gray-100 rounded-lg">
-        <h2 class="text-xl font-semibold mb-3 text-gray-700">Filters</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label for="filter-client" class="block text-sm font-medium text-gray-700">Client</label>
-                <input type="text" id="filter-client" name="client" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-            </div>
-            <div>
-                <label for="filter-status" class="block text-sm font-medium text-gray-700">Status</label>
-                <select id="filter-status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                    <option value="">All</option>
-                    <option value="Draft">Draft</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Review">Review</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
-            <div>
-                <label for="filter-framework" class="block text-sm font-medium text-gray-700">Framework Category (Placeholder)</label>
-                <input type="text" id="filter-framework" name="framework_category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="e.g., Conflict ID, Actor Type">
-            </div>
-        </div>
-        <div class="mt-4 text-right">
-            <button class="
-              py-2 px-4 
-              bg-gray-600 text-white rounded-md 
-              hover:bg-gray-700 focus:outline-none focus:ring-2
-            ">Apply Filters</button>
-        </div>
+  <!-- Filters Section (Placeholder) -->
+  <div class="mb-6 p-4 bg-gray-100 rounded-lg">
+    <h2 class="text-xl font-semibold mb-3 text-gray-700">Filters</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label
+          for="filter-client"
+          class="block text-sm font-medium text-gray-700"
+          >Client</label
+        >
+        <input
+          type="text"
+          id="filter-client"
+          name="client"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+      </div>
+      <div>
+        <label
+          for="filter-status"
+          class="block text-sm font-medium text-gray-700"
+          >Status</label
+        >
+        <select
+          id="filter-status"
+          name="status"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        >
+          <option value="">All</option>
+          <option value="Draft">Draft</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Review">Review</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div>
+        <label
+          for="filter-framework"
+          class="block text-sm font-medium text-gray-700"
+          >Framework Category (Placeholder)</label
+        >
+        <input
+          type="text"
+          id="filter-framework"
+          name="framework_category"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          placeholder="e.g., Conflict ID, Actor Type"
+        />
+      </div>
     </div>
-
-    <!-- Assessment List Table (Placeholder) -->
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                    <th scope="col" class="relative px-6 py-3">
-                        <span class="sr-only">View</span>
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <!-- Example Row (Loop through assessments here) -->
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">A-001</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Example Client Inc.</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Full Framework</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Completed
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Analyst One</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2025-03-20</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-900">View</a>
-                    </td>
-                </tr>
-                <!-- End Example Row -->
-            </tbody>
-        </table>
+    <div class="mt-4 text-right space-x-2">
+      <button
+        type="button"
+        class="py-2 px-4 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        aria-label="Clear all filters"
+      >
+        Clear Filters
+      </button>
+      <button
+        type="button"
+        class="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        aria-label="Apply selected filters"
+      >
+        Apply Filters
+      </button>
     </div>
+  </div>
 
+  <!-- Assessment List Table (Placeholder) -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            ID
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Client
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Type
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Status
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Assigned To
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Created
+          </th>
+          <th scope="col" class="relative px-6 py-3">
+            <span class="sr-only">View</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <!-- Example Row (Loop through assessments here) -->
+        <tr>
+          <td
+            class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          >
+            A-001
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            Example Client Inc.
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            Full Framework
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span
+              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+            >
+              Completed
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            Analyst One
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            2025-03-20
+          </td>
+          <td
+            class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+          >
+            <a href="#" class="text-indigo-600 hover:text-indigo-900">View</a>
+          </td>
+        </tr>
+        <!-- End Example Row -->
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
