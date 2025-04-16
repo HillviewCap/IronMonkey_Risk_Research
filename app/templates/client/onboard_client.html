@@ -1,76 +1,85 @@
-{% extends "base.html" %}
-{% from "_form_helpers.html" import render_field %}
-
-{% block title %}{{ title }}{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% from "_form_helpers.html" import render_field %} {%
+block title %}{{ title }}{% endblock %} {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6 text-gray-800">{{ title }}</h1>
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">{{ title }}</h1>
 
-    {# Display flashed messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="p-4 mb-4 text-sm rounded-lg 
-                    {% if category == 'danger' %} bg-red-100 text-red-700 
-                    {% elif category == 'success' %} bg-green-100 text-green-700 
-                    {% else %} bg-blue-100 text-blue-700 {% endif %}" 
-                    role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+  {# Display flashed messages #} {% with messages =
+  get_flashed_messages(with_categories=true) %} {% if messages %} {% for
+  category, message in messages %}
+  <div
+    class="p-4 mb-4 text-sm rounded-lg {% if category == 'danger' %} bg-red-100 text-red-700 {% elif category == 'success' %} bg-green-100 text-green-700 {% else %} bg-blue-100 text-blue-700 {% endif %}"
+    role="alert"
+  >
+    {{ message }}
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
 
-    <form method="POST" action="{{ url_for('client.onboard_client') }}" novalidate class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        {{ form.hidden_tag() }}
+  <form
+    method="POST"
+    action="{{ url_for('client.onboard_client') }}"
+    novalidate
+    class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+  >
+    {{ form.hidden_tag() }} {# Define standard input classes #} {% set
+    input_class = 'mt-1 block w-full px-3 py-2 bg-white border border-gray-300
+    rounded-md shadow-sm focus:outline-none focus:ring-indigo-500
+    focus:border-indigo-500 sm:text-sm' %} {% set textarea_class = input_class +
+    ' min-h-[60px]' %} {# Add min height for textareas #}
 
-        {# Define standard input classes #}
-        {% set input_class = 'mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm' %}
-        {% set textarea_class = input_class + ' min-h-[60px]' %} {# Add min height for textareas #}
+    <fieldset class="mb-8 border border-gray-300 p-4 rounded">
+      <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">
+        Organization Details
+      </legend>
+      {{ render_field(form.name, class=input_class) }} {{
+      render_field(form.industry, class=input_class) }} {{
+      render_field(form.website, class=input_class) }} {{
+      render_field(form.description, class=textarea_class, rows=3) }} {{
+      render_field(form.public_profile_summary, class=textarea_class, rows=3) }}
+    </fieldset>
 
-        <fieldset class="mb-8 border border-gray-300 p-4 rounded">
-            <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">Organization Details</legend>
-            {{ render_field(form.name, class=input_class) }}
-            {{ render_field(form.industry, class=input_class) }}
-            {{ render_field(form.website, class=input_class) }}
-            {{ render_field(form.description, class=textarea_class, rows=3) }}
-            {{ render_field(form.public_profile_summary, class=textarea_class, rows=3) }}
-        </fieldset>
+    <fieldset class="mb-8 border border-gray-300 p-4 rounded">
+      <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">
+        Primary Contact
+      </legend>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+        {# Use gap-x for horizontal spacing only #} {{
+        render_field(form.contact_first_name, class=input_class) }} {{
+        render_field(form.contact_last_name, class=input_class) }}
+      </div>
+      {{ render_field(form.contact_email, class=input_class) }}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+        {{ render_field(form.contact_phone, class=input_class) }} {{
+        render_field(form.contact_position, class=input_class) }}
+      </div>
+    </fieldset>
 
-        <fieldset class="mb-8 border border-gray-300 p-4 rounded">
-            <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">Primary Contact</legend>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4"> {# Use gap-x for horizontal spacing only #}
-                {{ render_field(form.contact_first_name, class=input_class) }}
-                {{ render_field(form.contact_last_name, class=input_class) }}
-            </div>
-            {{ render_field(form.contact_email, class=input_class) }}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                {{ render_field(form.contact_phone, class=input_class) }}
-                {{ render_field(form.contact_position, class=input_class) }}
-            </div>
-        </fieldset>
+    <fieldset class="mb-8 border border-gray-300 p-4 rounded">
+      <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">
+        Primary Location (Headquarters)
+      </legend>
+      {{ render_field(form.location_name, class=input_class) }} {{
+      render_field(form.location_address, class=input_class) }}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+        {{ render_field(form.location_city, class=input_class) }} {{
+        render_field(form.location_state, class=input_class) }}
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+        {{ render_field(form.location_country, class=input_class) }} {{
+        render_field(form.location_postal_code, class=input_class) }}
+      </div>
+    </fieldset>
 
-        <fieldset class="mb-8 border border-gray-300 p-4 rounded">
-            <legend class="text-xl font-semibold mb-4 px-2 text-gray-700">Primary Location (Headquarters)</legend>
-            {{ render_field(form.location_name, class=input_class) }}
-            {{ render_field(form.location_address, class=input_class) }}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                {{ render_field(form.location_city, class=input_class) }}
-                {{ render_field(form.location_state, class=input_class) }}
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                {{ render_field(form.location_country, class=input_class) }}
-                {{ render_field(form.location_postal_code, class=input_class) }}
-            </div>
-        </fieldset>
-
-        <div class="flex items-center justify-between mt-6">
-            {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
-            <a href="{{ url_for('client.search_page') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
-                Cancel
-            </a>
-        </div>
-    </form>
+    <div class="flex items-center justify-between mt-6">
+      {{ form.submit(class="bg-indigo-600 hover:bg-indigo-700 text-white
+      font-bold py-2 px-4 rounded focus:outline-none focus:ring-2
+      focus:ring-offset-2 focus:ring-indigo-500") }}
+      <a
+        href="{{ url_for('client.client_search') }}"
+        class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800"
+      >
+        Cancel
+      </a>
+    </div>
+  </form>
 </div>
 {% endblock %}
