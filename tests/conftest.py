@@ -19,6 +19,7 @@ from app.models.user import User  # Import User model - MOVED
 from flask import url_for  # Added for login fixture
 from app.models.client import Client  # Import Client model
 from app.models.risk import Assessment, Finding, Recommendation  # Import risk models
+from app.models.country import Country  # Import Country model
 from datetime import date, timedelta  # Import date/timedelta for assessment date
 from werkzeug.security import generate_password_hash  # MOVED
 
@@ -567,3 +568,26 @@ def redis_flush(app):
             pytest.fail(f"Failed to flush Redis DB: {e}")
     else:
         print("Skipping Redis flush: Flask-Session Redis client not available.")
+
+
+@pytest.fixture(scope="function")
+def test_countries(db):
+    """
+    Creates test country records in the database for testing country dropdowns.
+    """
+    countries = [
+        Country(
+            country="United States", abbreviation="US", capital_city="Washington D.C."
+        ),
+        Country(country="United Kingdom", abbreviation="GB", capital_city="London"),
+        Country(country="Canada", abbreviation="CA", capital_city="Ottawa"),
+        Country(country="Australia", abbreviation="AU", capital_city="Canberra"),
+        Country(country="Germany", abbreviation="DE", capital_city="Berlin"),
+    ]
+
+    for country in countries:
+        db.session.add(country)
+
+    db.session.commit()
+
+    return countries

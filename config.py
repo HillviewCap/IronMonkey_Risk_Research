@@ -82,27 +82,7 @@ class Config:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
 
-
-    # Static choices for forms
-    COUNTRIES = [
-        ("", "-- Select Country --"),
-        ("AF", "Afghanistan"),
-        ("AL", "Albania"),
-        ("DZ", "Algeria"),
-        ("AD", "Andorra"),
-        ("AO", "Angola"),
-        # ... (Add many more countries as needed)
-        ("GB", "United Kingdom"),
-        ("US", "United States"),
-        ("UY", "Uruguay"),
-        ("UZ", "Uzbekistan"),
-        ("VU", "Vanuatu"),
-        ("VE", "Venezuela"),
-        ("VN", "Vietnam"),
-        ("YE", "Yemen"),
-        ("ZM", "Zambia"),
-        ("ZW", "Zimbabwe"),
-    ]
+    # Configuration settings continue here
 
 
 class DevelopmentConfig(Config):

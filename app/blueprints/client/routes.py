@@ -17,6 +17,10 @@ from app.services.client_service import (
     create_client_with_details,
     get_client_by_id,
 )
+from app.services.country_service import (
+    get_countries_for_dropdown,
+    get_all_countries_for_dropdown,
+)
 from .forms import (
     ClientOnboardingForm,
     ClientEditForm,
@@ -76,16 +80,8 @@ def client_landing():
         )
         industry_choices = [("", "Error loading industries")]
 
-    country_choices = current_app.config.get(
-        "COUNTRIES", [("", "Error loading countries")]
-    )
-    # Ensure the format is (value, label) and add an "All" option
-    if country_choices and isinstance(country_choices[0], tuple):
-        country_choices = [("", "-- All Countries --")] + country_choices
-    else:  # Handle potential simple list format
-        country_choices = [("", "-- All Countries --")] + [
-            (c, c) for c in country_choices
-        ]
+    # Get country choices from the database
+    country_choices = get_all_countries_for_dropdown()
 
     return render_template(
         "client/landing.html",
@@ -122,9 +118,8 @@ def onboard_client():
         form.industry.choices = [("", "Error loading industries")]
 
     # Load countries from config
-    form.location_country.choices = current_app.config.get(
-        "COUNTRIES", [("", "Error loading countries")]
-    )
+    # Get country choices from the database
+    form.location_country.choices = get_countries_for_dropdown()
 
     if form.validate_on_submit():
         # Extract data from the form
@@ -251,9 +246,8 @@ def add_location(client_id):
     form = LocationForm()
 
     # Load countries from config
-    form.country.choices = current_app.config.get(
-        "COUNTRIES", [("", "Error loading countries")]
-    )
+    # Get country choices from the database
+    form.country.choices = get_countries_for_dropdown()
 
     if form.validate_on_submit():
         try:
@@ -306,9 +300,8 @@ def edit_location(client_id, location_id):
     form = LocationForm(obj=location)  # Pre-populate form
 
     # Load countries from config
-    form.country.choices = current_app.config.get(
-        "COUNTRIES", [("", "Error loading countries")]
-    )
+    # Get country choices from the database
+    form.country.choices = get_countries_for_dropdown()
 
     if form.validate_on_submit():
         try:
