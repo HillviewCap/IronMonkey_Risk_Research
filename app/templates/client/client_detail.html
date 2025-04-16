@@ -14,21 +14,21 @@ content %}
 
   <div class="bg-white shadow-lg rounded-lg overflow-hidden">
     <div class="bg-gray-100 px-6 py-4 border-b border-gray-200">
-      <h1 class="text-2xl font-bold text-gray-800">{{ client.name }}</h1>
+      <h1 class="text-3xl font-bold text-gray-800">{{ client.name }}</h1>
       <p class="text-sm text-gray-600">Client ID: {{ client.id }}</p>
     </div>
 
-    <div class="p-6 space-y-4">
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">Industry</h3>
+    <div class="p-6 space-y-6">
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Industry</h2>
         <p class="mt-1 text-lg text-gray-900">
           {{ client.industry | default('N/A') }}
         </p>
       </div>
 
       {% if client.website %}
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">Website</h3>
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Website</h2>
         <p class="mt-1 text-lg text-gray-900">
           <a
             href="{{ client.website }}"
@@ -40,24 +40,24 @@ content %}
         </p>
       </div>
       {% endif %} {% if client.description %}
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">Description</h3>
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Description</h2>
         <p class="mt-1 text-base text-gray-700 whitespace-pre-wrap">
           {{ client.description }}
         </p>
       </div>
       {% endif %} {% if client.public_profile_summary %}
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">
           Public Profile Summary
-        </h3>
+        </h2>
         <p class="mt-1 text-base text-gray-700 whitespace-pre-wrap">
           {{ client.public_profile_summary }}
         </p>
       </div>
       {% endif %} {% if client.competitors %}
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">Competitors</h3>
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Competitors</h2>
         {# Display as a simple list if it's a list, otherwise raw #} {% if
         client.competitors is iterable and client.competitors is not string %}
         <ul class="list-disc list-inside mt-1 text-base text-gray-700">
@@ -73,16 +73,16 @@ content %}
       </div>
       {% endif %}
 
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">Created On</h3>
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Created On</h2>
         <p class="mt-1 text-base text-gray-900">
           {{ client.created_at.strftime('%Y-%m-%d %H:%M:%S') if
           client.created_at else 'N/A' }} UTC
         </p>
       </div>
 
-      <div>
-        <h3 class="text-sm font-medium text-gray-500">Last Updated</h3>
+      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Last Updated</h2>
         <p class="mt-1 text-base text-gray-900">
           {{ client.updated_at.strftime('%Y-%m-%d %H:%M:%S') if
           client.updated_at else 'N/A' }} UTC
@@ -90,10 +90,10 @@ content %}
       </div>
 
       {# --- Related Information Sections --- #}
-      <div class="pt-4 border-t border-gray-200 space-y-6">
+      <div class="pt-6 border-t border-gray-200 space-y-8">
         {# --- Locations --- #}
-        <div>
-          <div class="flex justify-between items-center mb-2">
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-700">Locations</h2>
             <a
               href="{{ url_for('client.add_location', client_id=client.id) }}"
@@ -152,8 +152,8 @@ content %}
         </div>
 
         {# --- Contacts --- #}
-        <div>
-          <div class="flex justify-between items-center mb-2">
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-700">Contacts</h2>
             <a
               href="{{ url_for('client.add_contact', client_id=client.id) }}"
@@ -211,8 +211,8 @@ content %}
         </div>
 
         {# --- Assets --- #}
-        <div>
-          <div class="flex justify-between items-center mb-2">
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-700">Assets</h2>
             <a
               href="{{ url_for('client.add_asset', client_id=client.id) }}"
