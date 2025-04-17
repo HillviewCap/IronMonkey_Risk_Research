@@ -2,19 +2,6 @@
 block content %}
 <div
   class="container mx-auto px-4 py-8"
-  x-data="{
-        filters: {
-            client_id: '{{ filters.client_id or '' }}',
-            status: '{{ filters.status or '' }}',
-            assessment_type: '{{ filters.assessment_type or '' }}',
-            framework_category: '{{ filters.framework_category or '' }}',
-            min_risk_score: '{{ filters.min_risk_score or '' }}',
-            max_risk_score: '{{ filters.max_risk_score or '' }}'
-        },
-        assessments: {{ assessments | tojson | safe }},
-        isLoading: false,
-        pagination: {}
-     }"
   x-data="assessmentListComponent()"
   x-init="console.log('Alpine initialized')"
 >
@@ -232,7 +219,7 @@ block content %}
           <tr>
             <td class="px-6 py-4 whitespace-nowrap">
               <a
-                :href="`/assessments/${assessment.id}`"
+                :href="`/risk/assessments/${assessment.id}`"
                 class="text-sm font-medium text-indigo-600 hover:text-indigo-900"
                 x-text="assessment.name"
               ></a>
@@ -275,132 +262,6 @@ block content %}
                 >
                 </span>
               </template>
-
-              <script>
-                // Function to get CSRF token from meta tag (if using Flask-WTF pattern)
-                function getCsrfToken() {
-                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                    return csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}'; // Fallback to Jinja render
-                }
-
-                // Function to handle API responses (simplified for GET list)
-                async function handleListResponse(response, errorMessagePrefix) {
-                    const data = await response.json();
-                    if (response.ok && data.status === 'success') {
-                        return data.data; // Return the data part containing assessments and pagination
-                    } else {
-                        const message = data.error?.message || 'An unknown error occurred.';
-                        alert(`${errorMessagePrefix}: ${message}`);
-                        console.error('API Error:', data.error || data);
-                        return null; // Indicate failure
-                    }
-                }
-
-                // Helper to format date string (basic example)
-                function formatDate(dateString) {
-                    if (!dateString) return 'N/A';
-                    try {
-                        const date = new Date(dateString);
-                        // Format as YYYY-MM-DD
-                        return date.toISOString().split('T')[0];
-                    } catch (e) {
-                        console.error("Error formatting date:", dateString, e);
-                        return dateString; // Return original if formatting fails
-                    }
-                }
-
-                function assessmentListComponent() {
-                    return {
-                        // Initial state from server-side rendering
-                        filters: {
-                            client_id: '{{ filters.client_id or '' }}',
-                            status: '{{ filters.status or '' }}',
-                            assessment_type: '{{ filters.assessment_type or '' }}',
-                            framework_category: '{{ filters.framework_category or '' }}',
-                            min_risk_score: '{{ filters.min_risk_score or '' }}',
-                            max_risk_score: '{{ filters.max_risk_score or '' }}',
-                            // Add sort and pagination defaults if needed
-                            sort_by: 'updated_at',
-                            sort_order: 'desc',
-                            page: 1,
-                            per_page: 20
-                        },
-                        assessments: {{ assessments | tojson | safe }},
-                        isLoading: false,
-                        pagination: { // Initialize pagination info
-                            page: 1,
-                            per_page: 20,
-                            total_pages: 1, // Placeholder, update from API
-                            total_items: 0 // Placeholder, update from API
-                        },
-
-                        fetchAssessments() {
-                            this.isLoading = true;
-                            const params = new URLSearchParams();
-                            // Add only non-empty filters to params
-                            for (const key in this.filters) {
-                                // Only include filters, not pagination/sort info here
-                                if (['client_id', 'status', 'assessment_type', 'framework_category', 'min_risk_score', 'max_risk_score'].includes(key)) {
-                                     if (this.filters[key] !== null && this.filters[key] !== '') {
-                                        params.append(key, this.filters[key]);
-                                     }
-                                }
-                            }
-                            // Add sort and pagination params
-                            params.append('sort_by', this.filters.sort_by);
-                            params.append('sort_order', this.filters.sort_order);
-                            params.append('page', this.pagination.page);
-                            params.append('per_page', this.pagination.per_page);
-
-
-                            const url = `/api/v1/risk-assessments/?${params.toString()}`;
-                            console.log("Fetching:", url); // Debugging
-
-                            fetch(url, {
-                                method: 'GET',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    // No CSRF needed for GET usually
-                                }
-                            })
-                            .then(response => handleListResponse(response, 'Error fetching assessments'))
-                            .then(data => {
-                                if (data) {
-                                    this.assessments = data.assessments;
-                                    this.pagination = data.pagination;
-                                    console.log("Fetched assessments:", this.assessments); // Debugging
-                                } else {
-                                    // Handle error case if needed, maybe clear list
-                                    this.assessments = [];
-                                    this.pagination = {};
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Fetch Error:', error);
-                                alert('A network error occurred while fetching assessments.');
-                                this.assessments = []; // Clear list on network error
-                                this.pagination = {};
-                            })
-                            .finally(() => {
-                                this.isLoading = false;
-                            });
-                        },
-
-                        clearFilters() {
-                             this.filters = {
-                                client_id: '', status: '', assessment_type: '', framework_category: '',
-                                min_risk_score: '', max_risk_score: '', sort_by: 'updated_at', sort_order: 'desc'
-                             };
-                             this.pagination.page = 1; // Reset to first page
-                             this.fetchAssessments();
-                        },
-
-                         // Expose formatDate to the template
-                        formatDate: formatDate
-                    }
-                }
-              </script>
-
               <template
                 x-if="assessment.risk_score === null || assessment.risk_score === undefined"
               >
@@ -415,12 +276,12 @@ block content %}
               class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
             >
               <a
-                :href="`/assessments/${assessment.id}`"
+                :href="`/risk/assessments/${assessment.id}`"
                 class="text-indigo-600 hover:text-indigo-900 mr-3"
                 >View</a
               >
               <a
-                :href="`/assessments/${assessment.id}/edit`"
+                :href="`/risk/assessments/${assessment.id}/edit`"
                 class="text-blue-600 hover:text-blue-900"
                 >Edit</a
               >
@@ -433,5 +294,130 @@ block content %}
   <!-- Pagination Controls (Add later if needed) -->
 </div>
 
-<!-- Add JavaScript block at the end -->
+<!-- JavaScript for Alpine.js component -->
+<script>
+  // Function to get CSRF token from meta tag (if using Flask-WTF pattern)
+  function getCsrfToken() {
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      return csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}'; // Fallback to Jinja render
+  }
+
+  // Function to handle API responses (simplified for GET list)
+  async function handleListResponse(response, errorMessagePrefix) {
+      const data = await response.json();
+      if (response.ok && data.status === 'success') {
+          return data.data; // Return the data part containing assessments and pagination
+      } else {
+          const message = data.error?.message || 'An unknown error occurred.';
+          alert(`${errorMessagePrefix}: ${message}`);
+          console.error('API Error:', data.error || data);
+          return null; // Indicate failure
+      }
+  }
+
+  // Helper to format date string (basic example)
+  function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      try {
+          const date = new Date(dateString);
+          // Format as YYYY-MM-DD
+          return date.toISOString().split('T')[0];
+      } catch (e) {
+          console.error("Error formatting date:", dateString, e);
+          return dateString; // Return original if formatting fails
+      }
+  }
+
+  function assessmentListComponent() {
+      return {
+          // Initial state from server-side rendering
+          filters: {
+              client_id: '{{ filters.client_id or '' }}',
+              status: '{{ filters.status or '' }}',
+              assessment_type: '{{ filters.assessment_type or '' }}',
+              framework_category: '{{ filters.framework_category or '' }}',
+              min_risk_score: '{{ filters.min_risk_score or '' }}',
+              max_risk_score: '{{ filters.max_risk_score or '' }}',
+              // Add sort and pagination defaults if needed
+              sort_by: 'updated_at',
+              sort_order: 'desc',
+              page: 1,
+              per_page: 20
+          },
+          assessments: {{ assessments | tojson | safe }},
+          isLoading: false,
+          pagination: { // Initialize pagination info
+              page: 1,
+              per_page: 20,
+              total_pages: 1, // Placeholder, update from API
+              total_items: 0 // Placeholder, update from API
+          },
+
+          fetchAssessments() {
+              this.isLoading = true;
+              const params = new URLSearchParams();
+              // Add only non-empty filters to params
+              for (const key in this.filters) {
+                  // Only include filters, not pagination/sort info here
+                  if (['client_id', 'status', 'assessment_type', 'framework_category', 'min_risk_score', 'max_risk_score'].includes(key)) {
+                       if (this.filters[key] !== null && this.filters[key] !== '') {
+                          params.append(key, this.filters[key]);
+                       }
+                  }
+              }
+              // Add sort and pagination params
+              params.append('sort_by', this.filters.sort_by);
+              params.append('sort_order', this.filters.sort_order);
+              params.append('page', this.pagination.page);
+              params.append('per_page', this.pagination.per_page);
+
+
+              const url = `/risk/api/v1/risk-assessments/?${params.toString()}`;
+              console.log("Fetching:", url); // Debugging
+
+              fetch(url, {
+                  method: 'GET',
+                  headers: {
+                      'Accept': 'application/json',
+                      // No CSRF needed for GET usually
+                  }
+              })
+              .then(response => handleListResponse(response, 'Error fetching assessments'))
+              .then(data => {
+                  if (data) {
+                      this.assessments = data.assessments;
+                      this.pagination = data.pagination;
+                      console.log("Fetched assessments:", this.assessments); // Debugging
+                  } else {
+                      // Handle error case if needed, maybe clear list
+                      this.assessments = [];
+                      this.pagination = {};
+                  }
+              })
+              .catch(error => {
+                  console.error('Fetch Error:', error);
+                  alert('A network error occurred while fetching assessments.');
+                  this.assessments = []; // Clear list on network error
+                  this.pagination = {};
+              })
+              .finally(() => {
+                  this.isLoading = false;
+              });
+          },
+
+          clearFilters() {
+               this.filters = {
+                  client_id: '', status: '', assessment_type: '', framework_category: '',
+                  min_risk_score: '', max_risk_score: '', sort_by: 'updated_at', sort_order: 'desc'
+               };
+               this.pagination.page = 1; // Reset to first page
+               this.fetchAssessments();
+          },
+
+           // Expose formatDate to the template
+          formatDate: formatDate
+      }
+  }
+</script>
+
 {% endblock %}

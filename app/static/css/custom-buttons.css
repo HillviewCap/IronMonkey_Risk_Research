@@ -1,0 +1,40 @@
+/* Custom button classes */
+.bg-green-600 {
+  background-color: #16a34a;
+}
+.hover\:bg-green-700:hover {
+  background-color: #15803d;
+}
+.focus\:ring-green-500:focus {
+  --tw-ring-color: #22c55e;
+}
+
+.bg-yellow-500 {
+  background-color: #eab308;
+}
+.hover\:bg-yellow-600:hover {
+  background-color: #ca8a04;
+}
+.focus\:ring-yellow-400:focus {
+  --tw-ring-color: #facc15;
+}
+
+.bg-purple-600 {
+  background-color: #9333ea;
+}
+.hover\:bg-purple-700:hover {
+  background-color: #7e22ce;
+}
+.focus\:ring-purple-500:focus {
+  --tw-ring-color: #a855f7;
+}
+
+.bg-gray-500 {
+  background-color: #6b7280;
+}
+.hover\:bg-gray-600:hover {
+  background-color: #4b5563;
+}
+.focus\:ring-gray-400:focus {
+  --tw-ring-color: #9ca3af;
+}
